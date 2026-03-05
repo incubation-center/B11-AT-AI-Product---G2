@@ -87,6 +87,7 @@ export default function SignupPage() {
         <div className="space-y-2">
           <button
             type="button"
+            onClick={() => alert("Google OAuth integration pending")}
             className="w-full flex items-center justify-center gap-2 bg-white border border-gray-300 text-gray-700 font-bold py-2 px-4 text-sm rounded-lg hover:bg-gray-50 transition-colors"
           >
             <svg className="w-4 h-4" viewBox="0 0 24 24">
@@ -100,6 +101,7 @@ export default function SignupPage() {
 
           <button
             type="button"
+            onClick={() => alert("GitHub OAuth integration pending")}
             className="w-full flex items-center justify-center gap-2 bg-white border border-gray-300 text-gray-700 font-bold py-2 px-4 text-sm rounded-lg hover:bg-gray-50 transition-colors"
           >
             <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
