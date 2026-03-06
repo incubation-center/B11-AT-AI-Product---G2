@@ -1,13 +1,5 @@
 @import url("https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,400&family=JetBrains+Mono:wght@400;500&display=swap");
 
-*,
-*::before,
-*::after {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
-}
-
 :root {
   --bg: #09090a;
   --surface: #111113;
@@ -1486,7 +1478,7 @@ section {
 /* ══════════════════════════════════
    FOOTER
 ══════════════════════════════════ */
-footer {
+.landing-page footer {
   background: var(--bg);
   border-top: 1px solid var(--border);
   padding: 60px 48px 40px;
