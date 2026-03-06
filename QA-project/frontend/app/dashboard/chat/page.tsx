@@ -16,9 +16,65 @@ export default function ChatPage() {
   const isQueryLimitReached = planType === "starter" && queriesRemaining === 0;
 
   const CHA_HISTORY = [
-    { id: "login", title: "Login module analysis", icon: "📊" },
-    { id: "march", title: "March regression risk", icon: "📉" },
-    { id: "coverage", title: "Coverage gaps report", icon: "🔍" },
+    {
+      id: "login",
+      title: "Login module analysis",
+      icon: (
+        <svg
+          width="14"
+          height="14"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
+          <path d="M3 3v18h18" />
+          <path d="M18 17V9" />
+          <path d="M13 17V5" />
+          <path d="M8 17v-3" />
+        </svg>
+      ),
+    },
+    {
+      id: "march",
+      title: "March regression risk",
+      icon: (
+        <svg
+          width="14"
+          height="14"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
+          <polyline points="22 7 13.5 15.5 8.5 10.5 2 17" />
+          <polyline points="16 7 22 7 22 13" />
+        </svg>
+      ),
+    },
+    {
+      id: "coverage",
+      title: "Coverage gaps report",
+      icon: (
+        <svg
+          width="14"
+          height="14"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
+          <circle cx="11" cy="11" r="8" />
+          <path d="m21 21-4.3-4.3" />
+        </svg>
+      ),
+    },
   ];
 
   const renderActiveChat = () => {
@@ -26,7 +82,32 @@ export default function ChatPage() {
       return (
         <div className="ai-chat-area" style={{ justifyContent: "center" }}>
           <div style={{ textAlign: "center", color: "var(--ink)" }}>
-            <div style={{ fontSize: "48px", marginBottom: "16px" }}>✨</div>
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "center",
+                marginBottom: "24px",
+                color: "var(--teal)",
+              }}
+            >
+              <svg
+                width="48"
+                height="48"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                style={{ opacity: 0.8 }}
+              >
+                <path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z" />
+                <path d="M5 3v4" />
+                <path d="M19 17v4" />
+                <path d="M3 5h4" />
+                <path d="M17 19h4" />
+              </svg>
+            </div>
             <h2
               style={{ fontSize: "24px", fontWeight: 500, marginBottom: "8px" }}
             >
@@ -58,7 +139,20 @@ export default function ChatPage() {
               className="ai-msg bot animate-fade-in"
               style={{ animationDelay: "0.2s", animationFillMode: "both" }}
             >
-              <div className="ai-msg-avatar">✨</div>
+              <div className="ai-msg-avatar">
+                <svg
+                  width="14"
+                  height="14"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z" />
+                </svg>
+              </div>
               <div className="ai-msg-content">
                 <div className="ai-msg-author">QA Intel</div>
                 <div>
@@ -81,9 +175,24 @@ export default function ChatPage() {
                         fontWeight: 600,
                         color: "var(--ink)",
                         marginBottom: "16px",
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "8px",
                       }}
                     >
-                      🔴 Regression Risk &mdash; March Release
+                      <svg
+                        width="14"
+                        height="14"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="var(--coral)"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      >
+                        <circle cx="12" cy="12" r="10" />
+                      </svg>
+                      Regression Risk &mdash; March Release
                     </div>
 
                     <div
@@ -286,7 +395,20 @@ export default function ChatPage() {
               className="ai-msg bot animate-fade-in"
               style={{ animationDelay: "0.2s", animationFillMode: "both" }}
             >
-              <div className="ai-msg-avatar">✨</div>
+              <div className="ai-msg-avatar">
+                <svg
+                  width="14"
+                  height="14"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z" />
+                </svg>
+              </div>
               <div className="ai-msg-content">
                 <div className="ai-msg-author">QA Intel</div>
                 <div>
@@ -295,9 +417,21 @@ export default function ChatPage() {
                     linked to recent feature additions:
                   </p>
                   <div className="ai-data-card">
-                    <div className="adc-header">
-                      <span style={{ fontSize: "16px" }}>🔍</span> Missing E2E
-                      Tests
+                    <div className="adc-header flex items-center gap-2">
+                      <svg
+                        width="16"
+                        height="16"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      >
+                        <circle cx="11" cy="11" r="8" />
+                        <path d="m21 21-4.3-4.3" />
+                      </svg>
+                      Missing E2E Tests
                     </div>
                     <div className="adc-row">
                       <span className="adc-label">SSO Redirects</span>
@@ -361,7 +495,20 @@ export default function ChatPage() {
             className="ai-msg bot animate-fade-in"
             style={{ animationDelay: "0.2s", animationFillMode: "both" }}
           >
-            <div className="ai-msg-avatar">✨</div>
+            <div className="ai-msg-avatar">
+              <svg
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z" />
+              </svg>
+            </div>
             <div className="ai-msg-content">
               <div className="ai-msg-author">QA Intel</div>
               <div>
@@ -371,9 +518,23 @@ export default function ChatPage() {
                 </p>
 
                 <div className="ai-data-card">
-                  <div className="adc-header">
-                    <span style={{ fontSize: "16px" }}>📊</span> Recurring Bug
-                    Patterns — Login Module
+                  <div className="adc-header flex items-center gap-2">
+                    <svg
+                      width="16"
+                      height="16"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <path d="M3 3v18h18" />
+                      <path d="M18 17V9" />
+                      <path d="M13 17V5" />
+                      <path d="M8 17v-3" />
+                    </svg>
+                    Recurring Bug Patterns — Login Module
                   </div>
 
                   <div className="adc-row">

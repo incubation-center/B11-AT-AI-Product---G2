@@ -188,7 +188,20 @@ function DashboardLoading() {
 function DashboardEmpty() {
   return (
     <div className="empty-state-card">
-      <div className="esc-icon">🌱</div>
+      <div className="esc-icon">
+        <svg
+          width="48"
+          height="48"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="var(--teal)"
+          strokeWidth="1.5"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
+          <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z" />
+        </svg>
+      </div>
       <h2 className="esc-title">Welcome to your Workspace</h2>
       <p className="esc-desc">
         Your dashboard is looking a bit empty. Upload your first test execution
@@ -197,7 +210,20 @@ function DashboardEmpty() {
 
       <div className="onboarding-list">
         <div className="ol-item done">
-          <div className="ol-icon t-done">✓</div>
+          <div className="ol-icon t-done">
+            <svg
+              width="12"
+              height="12"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="3"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <polyline points="20 6 9 17 4 12" />
+            </svg>
+          </div>
           <div className="ol-text">Create your QA Intelligence account</div>
         </div>
         <div className="ol-item">

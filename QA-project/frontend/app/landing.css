@@ -77,7 +77,7 @@ html {
 /* ══════════════════════════════════
    NAV
 ══════════════════════════════════ */
-nav {
+.landing-page nav {
   position: fixed;
   top: 0;
   left: 0;
@@ -642,7 +642,7 @@ nav {
 /* ══════════════════════════════════
    SECTIONS SHARED
 ══════════════════════════════════ */
-section {
+.landing-page section {
   padding: 100px 48px;
 }
 .section-eyebrow {
@@ -1548,13 +1548,13 @@ section {
    RESPONSIVE
 ══════════════════════════════════ */
 @media (max-width: 900px) {
-  nav {
+  .landing-page nav {
     padding: 0 24px;
   }
   .nav-links {
     display: none;
   }
-  section {
+  .landing-page section {
     padding: 72px 24px;
   }
   .hero {

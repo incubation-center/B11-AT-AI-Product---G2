@@ -311,7 +311,22 @@ export default function ExplorerPage() {
                 <tr>
                   <td colSpan={7} style={{ padding: 0 }}>
                     <div className="empty-table animate-fade-in">
-                      <div className="empty-table-icon">🕳️</div>
+                      <div className="empty-table-icon">
+                        <svg
+                          width="48"
+                          height="48"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="1.5"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          style={{ opacity: 0.5 }}
+                        >
+                          <circle cx="11" cy="11" r="8" />
+                          <path d="m21 21-4.3-4.3" />
+                        </svg>
+                      </div>
                       <h3
                         style={{
                           fontSize: "18px",

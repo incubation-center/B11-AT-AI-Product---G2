@@ -94,19 +94,70 @@ export default function UploadPage() {
         <div
           className={`w-step ${step >= 1 ? (step > 1 ? "done" : "active") : ""}`}
         >
-          <div className="ws-num">{step > 1 ? "✓" : "1"}</div>
+          <div className="ws-num">
+            {step > 1 ? (
+              <svg
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="3"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <polyline points="20 6 9 17 4 12" />
+              </svg>
+            ) : (
+              "1"
+            )}
+          </div>
           <span>Select File</span>
         </div>
         <div className={`ws-line ${step > 1 ? "done" : ""}`}></div>
         <div
           className={`w-step ${step >= 2 ? (step > 2 ? "done" : "active") : ""}`}
         >
-          <div className="ws-num">{step > 2 ? "✓" : "2"}</div>
+          <div className="ws-num">
+            {step > 2 ? (
+              <svg
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="3"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <polyline points="20 6 9 17 4 12" />
+              </svg>
+            ) : (
+              "2"
+            )}
+          </div>
           <span>Map Columns</span>
         </div>
         <div className={`ws-line ${step > 2 ? "done" : ""}`}></div>
         <div className={`w-step ${step === 3 ? "done" : "pending"}`}>
-          <div className="ws-num">{step === 3 ? "✓" : "3"}</div>
+          <div className="ws-num">
+            {step === 3 ? (
+              <svg
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="3"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <polyline points="20 6 9 17 4 12" />
+              </svg>
+            ) : (
+              "3"
+            )}
+          </div>
           <span>Import</span>
         </div>
       </div>
@@ -280,7 +331,20 @@ export default function UploadPage() {
                   <div className="uh-list">
                     <div className="uh-item">
                       <div className="uhi-left">
-                        <div className="uhi-icon db-icon">🗃️</div>
+                        <div className="uhi-icon db-icon">
+                          <svg
+                            width="16"
+                            height="16"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          >
+                            <path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-.82-1.2A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2Z" />
+                          </svg>
+                        </div>
                         <div>
                           <div className="uhi-name">Q4_Defect_Export.csv</div>
                           <div className="uhi-meta">
@@ -292,7 +356,20 @@ export default function UploadPage() {
                     </div>
                     <div className="uh-item">
                       <div className="uhi-left">
-                        <div className="uhi-icon db-icon">🗃️</div>
+                        <div className="uhi-icon db-icon">
+                          <svg
+                            width="16"
+                            height="16"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          >
+                            <path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-.82-1.2A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2Z" />
+                          </svg>
+                        </div>
                         <div>
                           <div className="uhi-name">jira_bugs_jan.xlsx</div>
                           <div className="uhi-meta">
@@ -407,7 +484,17 @@ export default function UploadPage() {
 
                       <div className="map-row-unified">
                         <div className="mru-file">
-                          <span className="mru-icon">⚡</span>
+                          <span className="mru-icon">
+                            <svg
+                              width="12"
+                              height="12"
+                              viewBox="0 0 24 24"
+                              fill="currentColor"
+                              stroke="none"
+                            >
+                              <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
+                            </svg>
+                          </span>
                           <span className="mru-name">severity_lvl</span>
                         </div>
                         <div className="mru-connect">
@@ -447,7 +534,21 @@ export default function UploadPage() {
 
                       <div className="map-row-unified">
                         <div className="mru-file">
-                          <span className="mru-icon">⚙</span>
+                          <span className="mru-icon">
+                            <svg
+                              width="12"
+                              height="12"
+                              viewBox="0 0 24 24"
+                              fill="none"
+                              stroke="currentColor"
+                              strokeWidth="2"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                            >
+                              <circle cx="12" cy="12" r="3" />
+                              <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
+                            </svg>
+                          </span>
                           <span className="mru-name">component</span>
                         </div>
                         <div className="mru-connect">
