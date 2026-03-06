@@ -27,6 +27,24 @@
   --r: 12px;
 }
 
+[data-theme="light"] {
+  --bg: #ffffff;
+  --surface: #f8f9fa;
+  --surface2: #f1f3f5;
+  --surface3: #e9ecef;
+  --border: #e5e7eb;
+  --border2: #d1d5db;
+  --ink: #111827;
+  --ink2: #4b5563;
+  --ink3: #6b7280;
+  --teal: #0d9488;
+  --teal2: #0f766e;
+  --teal3: #ccfbf1;
+  --coral: #e8503a;
+  --amber: #e8930a;
+  --green: #22c55e;
+}
+
 html {
   scroll-behavior: smooth;
 }
@@ -78,9 +96,7 @@ nav {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  background: rgba(9, 9, 10, 0.8);
   backdrop-filter: blur(16px);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
   transition: all 0.3s;
 }
 .nav-logo {
