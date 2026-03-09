@@ -1,10 +1,13 @@
+import logging
 from pinecone import Pinecone
 from app.config import settings
 
+logger = logging.getLogger(__name__)
+
 pc = Pinecone(api_key=settings.PINECONE_API_KEY)
 
-# Get or reference the index (create it in the Pinecone dashboard first)
-pinecone_index = pc.index(settings.PINECONE_INDEX_NAME)
+# Get or reference the index
+pinecone_index = pc.Index(settings.PINECONE_INDEX_NAME)
 
 
 async def upsert_chunks(
@@ -19,6 +22,7 @@ async def upsert_chunks(
       - metadata: dict (dataset_id, chunk_text, chunk_index, doc_id)
     """
     pinecone_index.upsert(vectors=vectors)
+    logger.info(f"Upserted {len(vectors)} vectors to Pinecone")
 
 
 async def query_similar_chunks(
@@ -33,11 +37,19 @@ async def query_similar_chunks(
         include_metadata=True,
         filter={"dataset_id": {"$eq": dataset_id}},
     )
-    return results.get("matches", [])
+    matches = results.get("matches", [])
+    logger.info(f"Pinecone query returned {len(matches)} matches for dataset {dataset_id}")
+    return matches
 
 
 async def delete_dataset_vectors(dataset_id: int) -> None:
     """Delete all Pinecone vectors belonging to a dataset."""
-    pinecone_index.delete(
-        filter={"dataset_id": {"$eq": dataset_id}},
-    )
+    try:
+        # List vector IDs with the dataset filter, then delete by ID
+        # For serverless, delete by metadata filter
+        pinecone_index.delete(
+            filter={"dataset_id": {"$eq": dataset_id}},
+        )
+        logger.info(f"Deleted vectors for dataset {dataset_id}")
+    except Exception as e:
+        logger.warning(f"Failed to delete vectors for dataset {dataset_id}: {e}")

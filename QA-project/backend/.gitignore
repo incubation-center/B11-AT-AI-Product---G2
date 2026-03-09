@@ -35,5 +35,18 @@ Thumbs.db
 # Testing
 coverage/
 
+# Python
+venv/
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+
+# Server logs
+server_err.log
+server_out.log
+server_combined.log
+
 # Misc
 *.pem
