@@ -64,7 +64,7 @@ export function PricingSection() {
             <li>Dashboard + custom reports</li>
             <li>Regression risk predictor</li>
             <li>Test coverage gap detection</li>
-            <li>Up to 10 team members</li>
+            <li>Up to 4 team members</li>
           </ul>
           <Link href="/signup" className="price-btn filled">
             Start 14-day free trial &rarr;

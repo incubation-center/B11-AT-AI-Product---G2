@@ -10,14 +10,24 @@ export interface UsageData {
   aiQueriesUsed: number;
 }
 
+export interface PaymentMethod {
+  brand: string;
+  last4: string;
+  expiry: string;
+}
+
 interface BillingContextType {
   planType: PlanType;
-  status: "active" | "trialing" | "canceled";
+  status: "active" | "trialing" | "canceled" | "past_due";
   trialEndDate?: string;
+  nextBillingDate?: string;
+  paymentMethod?: PaymentMethod;
   usage: UsageData;
   setPlanType: (plan: PlanType) => void;
-  setStatus: (status: "active" | "trialing" | "canceled") => void;
+  setStatus: (status: "active" | "trialing" | "canceled" | "past_due") => void;
   setTrialEndDate: (date: string | undefined) => void;
+  setNextBillingDate: (date: string | undefined) => void;
+  setPaymentMethod: (method: PaymentMethod | undefined) => void;
   setUsage: (usage: UsageData | ((prev: UsageData) => UsageData)) => void;
 }
 
@@ -26,10 +36,16 @@ const BillingContext = createContext<BillingContextType | undefined>(undefined);
 export function BillingProvider({ children }: { children: ReactNode }) {
   // We mock a starter state by default
   const [planType, setPlanType] = useState<PlanType>("starter");
-  const [status, setStatus] = useState<"active" | "trialing" | "canceled">(
-    "active",
-  );
+  const [status, setStatus] = useState<
+    "active" | "trialing" | "canceled" | "past_due"
+  >("active");
   const [trialEndDate, setTrialEndDate] = useState<string | undefined>(
+    undefined,
+  );
+  const [nextBillingDate, setNextBillingDate] = useState<string | undefined>(
+    undefined,
+  );
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod | undefined>(
     undefined,
   );
 
@@ -46,10 +62,14 @@ export function BillingProvider({ children }: { children: ReactNode }) {
         planType,
         status,
         trialEndDate,
+        nextBillingDate,
+        paymentMethod,
         usage,
         setPlanType,
         setStatus,
         setTrialEndDate,
+        setNextBillingDate,
+        setPaymentMethod,
         setUsage,
       }}
     >

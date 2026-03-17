@@ -13,9 +13,39 @@ export default function SettingsPage() {
   const [isCancelingPlan, setIsCancelingPlan] = useState(false);
   const [cardNumber, setCardNumber] = useState("");
   const [expiry, setExpiry] = useState("");
+  const [checkoutStep, setCheckoutStep] = useState<"plans" | "payment">(
+    "plans",
+  );
+  const [selectedPlan, setSelectedPlan] = useState<{
+    name: string;
+    price: string;
+  } | null>(null);
+  const [isProcessingCheckout, setIsProcessingCheckout] = useState(false);
   const profilePicRef = useRef<HTMLInputElement>(null);
+  const [inviteEmail, setInviteEmail] = useState("");
+  const [isSending, setIsSending] = useState(false);
+  const [showSuccess, setShowSuccess] = useState(false);
 
-  const { planType } = useBilling();
+  const {
+    planType,
+    setPlanType,
+    setStatus,
+    setTrialEndDate,
+    setPaymentMethod,
+    paymentMethod,
+    usage,
+    status,
+    trialEndDate,
+  } = useBilling();
+
+  // Helper to calculate trial days left
+  const getTrialDaysLeft = () => {
+    if (!trialEndDate) return 0;
+    const end = new Date(trialEndDate);
+    const now = new Date();
+    const diff = end.getTime() - now.getTime();
+    return Math.max(0, Math.ceil(diff / (1000 * 60 * 60 * 24)));
+  };
 
   const handleCardChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     let val = e.target.value.replace(/\D/g, "");
@@ -35,6 +65,46 @@ export default function SettingsPage() {
     } else {
       setExpiry(val);
     }
+  };
+
+  const handleStartCheckout = (name: string, price: string) => {
+    setSelectedPlan({ name, price });
+    setCheckoutStep("payment");
+  };
+
+  const handleCompleteCheckout = () => {
+    setIsProcessingCheckout(true);
+    // Simulate ABA PayWay Vaulting / Payment
+    setTimeout(() => {
+      setPlanType("team");
+      setStatus("trialing");
+      // Trial ends in 14 days
+      const d = new Date();
+      d.setDate(d.getDate() + 14);
+      setTrialEndDate(d.toISOString());
+      setPaymentMethod({
+        brand: "Visa",
+        last4: cardNumber.replace(/\s/g, "").slice(-4) || "4242",
+        expiry: expiry || "12/28",
+      });
+
+      setIsProcessingCheckout(false);
+      setIsManagingPlan(false);
+      setCheckoutStep("plans");
+      setSelectedPlan(null);
+    }, 2000);
+  };
+
+  const handleSendInvite = () => {
+    if (!inviteEmail) return;
+    setIsSending(true);
+    // Simulate API call
+    setTimeout(() => {
+      setIsSending(false);
+      setShowSuccess(true);
+      setInviteEmail("");
+      setTimeout(() => setShowSuccess(false), 3000);
+    }, 1000);
   };
 
   const renderContent = () => {
@@ -394,7 +464,13 @@ export default function SettingsPage() {
           <div className="animate-fade-in">
             <button
               className="dash-btn"
-              onClick={() => setIsManagingPlan(false)}
+              onClick={() => {
+                if (checkoutStep === "payment") {
+                  setCheckoutStep("plans");
+                } else {
+                  setIsManagingPlan(false);
+                }
+              }}
               style={{
                 marginBottom: "24px",
                 background: "transparent",
@@ -402,195 +478,428 @@ export default function SettingsPage() {
                 color: "var(--ink)",
               }}
             >
-              &larr; Back to Billing
+              &larr;{" "}
+              {checkoutStep === "payment" ? "Back to Plans" : "Back to Billing"}
             </button>
             <div className="set-section">
-              <h2 className="set-title">Upgrade Your Plan</h2>
-              <p className="set-desc">
-                Choose the perfect tier for your QA workflow needs.
-              </p>
-
-              <div className="plan-grid">
-                {/* Free Plan */}
-                <div className="plan-card">
-                  <h3 className="plan-card-title">Basic Core</h3>
-                  <p className="plan-card-desc">
-                    For small teams getting started with basic analytics.
+              {checkoutStep === "plans" ? (
+                <>
+                  <h2 className="set-title">Upgrade Your Plan</h2>
+                  <p className="set-desc">
+                    Choose the perfect tier for your QA workflow needs.
                   </p>
-                  <div className="plan-price-wrap">
-                    <span className="plan-price">$0</span>
-                    <span className="plan-price-period">/mo</span>
-                  </div>
-                  <ul className="plan-feat-list">
-                    <li className="plan-feat-item">
-                      <svg
-                        className="plan-feat-icon"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M5 13l4 4L19 7"
-                        />
-                      </svg>
-                      Up to 2 datasets (1GB max each)
-                    </li>
-                    <li className="plan-feat-item">
-                      <svg
-                        className="plan-feat-icon"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M5 13l4 4L19 7"
-                        />
-                      </svg>
-                      Standard AI Chat (50 queries/mo)
-                    </li>
-                    <li className="plan-feat-item">
-                      <svg
-                        className="plan-feat-icon"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M5 13l4 4L19 7"
-                        />
-                      </svg>
-                      30-day data retention
-                    </li>
-                  </ul>
-                  <button
-                    className="dash-btn"
-                    style={{
-                      width: "100%",
-                      justifyContent: "center",
-                      background: "transparent",
-                      color: "var(--ink)",
-                      border: "1px solid var(--border)",
-                    }}
-                  >
-                    Downgrade to Basic
-                  </button>
-                </div>
 
-                {/* Pro Plan */}
-                <div className="plan-card active">
-                  <div
-                    style={{
-                      position: "absolute",
-                      top: "-12px",
-                      left: "50%",
-                      transform: "translateX(-50%)",
-                      background: "var(--teal)",
-                      color: "white",
-                      fontSize: "11px",
-                      fontWeight: 600,
-                      padding: "4px 12px",
-                      borderRadius: "12px",
-                    }}
-                  >
-                    CURRENT PLAN
+                  <div className="plan-grid">
+                    {/* Free Plan */}
+                    <div className="plan-card">
+                      <h3 className="plan-card-title">Basic Core</h3>
+                      <p className="plan-card-desc">
+                        For small teams getting started with basic analytics.
+                      </p>
+                      <div className="plan-price-wrap">
+                        <span className="plan-price">$0</span>
+                        <span className="plan-price-period">/mo</span>
+                      </div>
+                      <ul className="plan-feat-list">
+                        <li className="plan-feat-item">
+                          <svg
+                            className="plan-feat-icon"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M5 13l4 4L19 7"
+                            />
+                          </svg>
+                          Up to 2 datasets (1GB max each)
+                        </li>
+                        <li className="plan-feat-item">
+                          <svg
+                            className="plan-feat-icon"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M5 13l4 4L19 7"
+                            />
+                          </svg>
+                          Standard AI Chat (50 queries/mo)
+                        </li>
+                        <li className="plan-feat-item">
+                          <svg
+                            className="plan-feat-icon"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M5 13l4 4L19 7"
+                            />
+                          </svg>
+                          30-day data retention
+                        </li>
+                      </ul>
+                      <button
+                        className="dash-btn"
+                        style={{
+                          width: "100%",
+                          justifyContent: "center",
+                          background: "var(--surface3)",
+                          color: "var(--ink3)",
+                          border: "1px solid var(--border)",
+                          cursor: "not-allowed",
+                        }}
+                        disabled
+                      >
+                        Individual Plan
+                      </button>
+                    </div>
+
+                    {/* Team Plan */}
+                    <div className="plan-card">
+                      <h3 className="plan-card-title">QA Intel Team</h3>
+                      <p className="plan-card-desc">
+                        Advanced AI analysis and predictive reporting for
+                        growing teams.
+                      </p>
+                      <div className="plan-price-wrap">
+                        <span className="plan-price">$79</span>
+                        <span className="plan-price-period">/mo</span>
+                      </div>
+                      <ul className="plan-feat-list">
+                        <li className="plan-feat-item">
+                          <svg
+                            className="plan-feat-icon"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M5 13l4 4L19 7"
+                            />
+                          </svg>
+                          10GB Storage & Unlimited Datasets
+                        </li>
+                        <li className="plan-feat-item">
+                          <svg
+                            className="plan-feat-icon"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M5 13l4 4L19 7"
+                            />
+                          </svg>
+                          Unlimited AI Chat queries
+                        </li>
+                        <li className="plan-feat-item">
+                          <svg
+                            className="plan-feat-icon"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M5 13l4 4L19 7"
+                            />
+                          </svg>
+                          Custom Report Generation
+                        </li>
+                        <li className="plan-feat-item">
+                          <svg
+                            className="plan-feat-icon"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M5 13l4 4L19 7"
+                            />
+                          </svg>
+                          90-day data retention
+                        </li>
+                      </ul>
+                      <button
+                        className="dash-btn dash-btn-primary"
+                        onClick={() =>
+                          handleStartCheckout("QA Intel Team", "79")
+                        }
+                        style={{
+                          width: "100%",
+                          justifyContent: "center",
+                        }}
+                      >
+                        Upgrade to Team
+                      </button>
+                    </div>
                   </div>
-                  <h3 className="plan-card-title">QA Intel Pro</h3>
-                  <p className="plan-card-desc">
-                    Advanced AI analysis and predictive reporting for growing
-                    teams.
-                  </p>
-                  <div className="plan-price-wrap">
-                    <span className="plan-price">$49</span>
-                    <span className="plan-price-period">/mo</span>
+                </>
+              ) : (
+                <div className="checkout-view animate-fade-in">
+                  <div style={{ display: "flex", gap: "40px" }}>
+                    {/* Left: Card Entry */}
+                    <div style={{ flex: 1 }}>
+                      <h2 className="set-title">Secure Checkout</h2>
+                      <p className="set-desc">
+                        Powered by <strong>ABA PayWay</strong>. Your card
+                        details are securely vaulted.
+                      </p>
+
+                      <div style={{ marginTop: "32px" }}>
+                        <div className="set-field">
+                          <label className="set-label">Name on Card</label>
+                          <input
+                            type="text"
+                            className="set-input"
+                            placeholder="John Doe"
+                            style={{ maxWidth: "100%" }}
+                          />
+                        </div>
+                        <div className="set-field">
+                          <label className="set-label">Card Number</label>
+                          <div style={{ position: "relative" }}>
+                            <input
+                              type="text"
+                              className="set-input"
+                              placeholder="0000 0000 0000 0000"
+                              maxLength={19}
+                              value={cardNumber}
+                              onChange={handleCardChange}
+                              style={{ maxWidth: "100%", paddingRight: "40px" }}
+                            />
+                            <div
+                              style={{
+                                position: "absolute",
+                                right: "12px",
+                                top: "50%",
+                                transform: "translateY(-50%)",
+                                opacity: 0.5,
+                              }}
+                            >
+                              <svg
+                                width="24"
+                                height="24"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                strokeWidth="2"
+                              >
+                                <rect
+                                  x="2"
+                                  y="5"
+                                  width="20"
+                                  height="14"
+                                  rx="2"
+                                />
+                                <line x1="2" y1="10" x2="22" y2="10" />
+                              </svg>
+                            </div>
+                          </div>
+                        </div>
+                        <div
+                          style={{
+                            display: "grid",
+                            gridTemplateColumns: "1fr 1fr",
+                            gap: "16px",
+                          }}
+                        >
+                          <div className="set-field">
+                            <label className="set-label">Expiry</label>
+                            <input
+                              type="text"
+                              className="set-input"
+                              placeholder="MM/YY"
+                              maxLength={5}
+                              value={expiry}
+                              onChange={handleExpiryChange}
+                              style={{ maxWidth: "100%" }}
+                            />
+                          </div>
+                          <div className="set-field">
+                            <label className="set-label">CVC</label>
+                            <input
+                              type="password"
+                              className="set-input"
+                              placeholder="***"
+                              maxLength={3}
+                              style={{ maxWidth: "100%" }}
+                            />
+                          </div>
+                        </div>
+
+                        <div
+                          style={{
+                            marginTop: "40px",
+                            padding: "16px",
+                            background: "rgba(13, 148, 136, 0.05)",
+                            borderRadius: "8px",
+                            border: "1px solid rgba(13, 148, 136, 0.1)",
+                          }}
+                        >
+                          <div
+                            style={{
+                              fontSize: "12px",
+                              color: "var(--ink2)",
+                              lineHeight: "1.5",
+                            }}
+                          >
+                            By clicking "Complete Upgrade", you agree to start a{" "}
+                            <strong>14-day free trial</strong>. After the trial
+                            ends, you will be charged{" "}
+                            <strong>${selectedPlan?.price}/month</strong> unless
+                            canceled.
+                          </div>
+                        </div>
+
+                        <button
+                          className="dash-btn dash-btn-primary"
+                          onClick={handleCompleteCheckout}
+                          disabled={isProcessingCheckout}
+                          style={{
+                            width: "100%",
+                            height: "48px",
+                            marginTop: "24px",
+                            justifyContent: "center",
+                            fontSize: "15px",
+                          }}
+                        >
+                          {isProcessingCheckout
+                            ? "Processing Securely..."
+                            : "Complete Upgrade"}
+                        </button>
+
+                        <div
+                          style={{
+                            textAlign: "center",
+                            marginTop: "16px",
+                            fontSize: "11px",
+                            color: "var(--ink3)",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            gap: "4px",
+                          }}
+                        >
+                          <svg
+                            width="12"
+                            height="12"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                          >
+                            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+                          </svg>
+                          SSL Encrypted & PCI Compliant
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Right: Order Summary */}
+                    <div
+                      style={{
+                        width: "300px",
+                        padding: "24px",
+                        background: "var(--surface2)",
+                        borderRadius: "12px",
+                        border: "1px solid var(--border)",
+                        alignSelf: "flex-start",
+                      }}
+                    >
+                      <h3
+                        style={{
+                          fontSize: "14px",
+                          fontWeight: 600,
+                          color: "var(--ink)",
+                          marginBottom: "16px",
+                        }}
+                      >
+                        Order Summary
+                      </h3>
+                      <div
+                        style={{
+                          display: "flex",
+                          justifyContent: "space-between",
+                          marginBottom: "12px",
+                          fontSize: "13px",
+                        }}
+                      >
+                        <span style={{ color: "var(--ink2)" }}>
+                          {selectedPlan?.name}
+                        </span>
+                        <span style={{ color: "var(--ink)" }}>
+                          ${selectedPlan?.price}.00
+                        </span>
+                      </div>
+                      <div
+                        style={{
+                          display: "flex",
+                          justifyContent: "space-between",
+                          marginBottom: "20px",
+                          fontSize: "13px",
+                        }}
+                      >
+                        <span style={{ color: "var(--ink2)" }}>
+                          Trial Discount
+                        </span>
+                        <span style={{ color: "var(--green)" }}>-100%</span>
+                      </div>
+                      <div
+                        style={{
+                          borderTop: "1px solid var(--border)",
+                          paddingTop: "16px",
+                          display: "flex",
+                          justifyContent: "space-between",
+                          fontSize: "15px",
+                          fontWeight: 600,
+                        }}
+                      >
+                        <span style={{ color: "var(--ink)" }}>Due Today</span>
+                        <span style={{ color: "var(--teal2)" }}>$0.00</span>
+                      </div>
+                      <div
+                        style={{
+                          marginTop: "24px",
+                          fontSize: "12px",
+                          color: "var(--ink3)",
+                        }}
+                      >
+                        First charging date:
+                        <br />
+                        <strong>
+                          {new Date(
+                            Date.now() + 14 * 24 * 60 * 60 * 1000,
+                          ).toLocaleDateString()}
+                        </strong>
+                      </div>
+                    </div>
                   </div>
-                  <ul className="plan-feat-list">
-                    <li className="plan-feat-item">
-                      <svg
-                        className="plan-feat-icon"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M5 13l4 4L19 7"
-                        />
-                      </svg>
-                      10GB Storage & Unlimited Datasets
-                    </li>
-                    <li className="plan-feat-item">
-                      <svg
-                        className="plan-feat-icon"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M5 13l4 4L19 7"
-                        />
-                      </svg>
-                      500 Advanced AI Chat queries
-                    </li>
-                    <li className="plan-feat-item">
-                      <svg
-                        className="plan-feat-icon"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M5 13l4 4L19 7"
-                        />
-                      </svg>
-                      Custom Report Generation
-                    </li>
-                    <li className="plan-feat-item">
-                      <svg
-                        className="plan-feat-icon"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M5 13l4 4L19 7"
-                        />
-                      </svg>
-                      90-day data retention
-                    </li>
-                  </ul>
-                  <button
-                    className="dash-btn dash-btn-primary"
-                    style={{
-                      width: "100%",
-                      justifyContent: "center",
-                      pointerEvents: "none",
-                      opacity: 0.5,
-                    }}
-                  >
-                    Current Plan
-                  </button>
                 </div>
-              </div>
+              )}
             </div>
           </div>
         );
@@ -649,9 +958,9 @@ export default function SettingsPage() {
                       margin: "0 auto 24px",
                     }}
                   >
-                    Upgrade to the Team plan to invite up to 10 members.
-                    Everyone gets their own login with shared access to your
-                    datasets and AI history.
+                    Upgrade to the Team plan to invite up to 4 members. Everyone
+                    gets their own login with shared access to your datasets and
+                    AI history.
                   </p>
                   <button
                     className="dash-btn dash-btn-primary"
@@ -680,15 +989,37 @@ export default function SettingsPage() {
                         className="set-input"
                         placeholder="colleague@company.com"
                         style={{ maxWidth: "100%" }}
+                        value={inviteEmail}
+                        onChange={(e) => setInviteEmail(e.target.value)}
                       />
                     </div>
                     <button
                       className="dash-btn dash-btn-primary"
-                      style={{ height: "40px" }}
+                      style={{ height: "40px", minWidth: "120px" }}
+                      onClick={handleSendInvite}
+                      disabled={isSending || !inviteEmail}
                     >
-                      Send Invite
+                      {isSending ? "Sending..." : "Send Invite"}
                     </button>
                   </div>
+
+                  {showSuccess && (
+                    <div
+                      style={{
+                        background: "rgba(13, 148, 136, 0.1)",
+                        color: "var(--teal2)",
+                        padding: "12px",
+                        borderRadius: "8px",
+                        fontSize: "13px",
+                        marginBottom: "24px",
+                        textAlign: "center",
+                        border: "1px solid rgba(13, 148, 136, 0.2)",
+                        animation: "fade-in 0.3s ease",
+                      }}
+                    >
+                      Invitation sent successfully!
+                    </div>
+                  )}
 
                   <h3
                     className="set-title"
@@ -700,7 +1031,7 @@ export default function SettingsPage() {
                       marginBottom: "16px",
                     }}
                   >
-                    Active Members (1 / 10)
+                    Active Members (1 / 4)
                   </h3>
 
                   <div
@@ -896,11 +1227,51 @@ export default function SettingsPage() {
 
             <div className="sub-plan-card">
               <div className="sub-plan-info">
-                <h3>QA Intel Pro</h3>
-                <p>Advanced AI Analysis & Predictive Reports</p>
+                <div
+                  style={{ display: "flex", alignItems: "center", gap: "10px" }}
+                >
+                  <h3>
+                    {planType === "starter" ? "Starter Plan" : "QA Intel Team"}
+                  </h3>
+                  {status === "trialing" && (
+                    <span
+                      style={{
+                        background: "rgba(13, 148, 136, 0.1)",
+                        color: "var(--teal2)",
+                        fontSize: "11px",
+                        padding: "2px 8px",
+                        borderRadius: "10px",
+                        fontWeight: 600,
+                        textTransform: "uppercase",
+                      }}
+                    >
+                      Trialing: {getTrialDaysLeft()} days left
+                    </span>
+                  )}
+                  {status === "active" && (
+                    <span
+                      style={{
+                        background: "rgba(34, 197, 94, 0.1)",
+                        color: "#16a34a",
+                        fontSize: "11px",
+                        padding: "2px 8px",
+                        borderRadius: "10px",
+                        fontWeight: 600,
+                        textTransform: "uppercase",
+                      }}
+                    >
+                      Active
+                    </span>
+                  )}
+                </div>
+                <p>
+                  {planType === "starter"
+                    ? "Basic core analytics"
+                    : "Advanced AI Analysis & Predictive Reports"}
+                </p>
               </div>
               <div className="sub-price">
-                $49
+                ${planType === "starter" ? "0" : "79"}
                 <span
                   style={{
                     fontSize: "15px",
@@ -914,39 +1285,106 @@ export default function SettingsPage() {
               </div>
             </div>
 
-            <div className="usage-wrap">
+            {paymentMethod && (
+              <div
+                style={{
+                  marginTop: "24px",
+                  padding: "16px",
+                  background: "var(--surface2)",
+                  borderRadius: "8px",
+                  border: "1px solid var(--border)",
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                }}
+              >
+                <div
+                  style={{ display: "flex", gap: "12px", alignItems: "center" }}
+                >
+                  <div
+                    style={{
+                      width: "40px",
+                      height: "24px",
+                      background: "#f8f9fa",
+                      borderRadius: "4px",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      fontSize: "10px",
+                      fontWeight: 700,
+                      color: "#000",
+                    }}
+                  >
+                    {paymentMethod.brand.toUpperCase()}
+                  </div>
+                  <div>
+                    <div
+                      style={{
+                        fontSize: "13px",
+                        color: "var(--ink)",
+                        fontWeight: 500,
+                      }}
+                    >
+                      **** **** **** {paymentMethod.last4}
+                    </div>
+                    <div style={{ fontSize: "11px", color: "var(--ink3)" }}>
+                      Expires {paymentMethod.expiry}
+                    </div>
+                  </div>
+                </div>
+                <button
+                  className="dt-action"
+                  onClick={() => setIsUpdatingPayment(true)}
+                >
+                  Edit
+                </button>
+              </div>
+            )}
+
+            <div className="usage-wrap" style={{ marginTop: "32px" }}>
               <div className="usage-header">
                 <span>Dataset Storage Usage</span>
                 <span style={{ fontFamily: '"JetBrains Mono", monospace' }}>
-                  8.4 GB / 10 GB
+                  {planType === "starter" ? "0.2 GB / 1 GB" : "8.4 GB / 10 GB"}
                 </span>
               </div>
               <div className="usage-bar-bg">
-                <div className="usage-bar-fill" style={{ width: "84%" }}></div>
+                <div
+                  className="usage-bar-fill"
+                  style={{ width: planType === "starter" ? "20%" : "84%" }}
+                ></div>
               </div>
-              <p
-                style={{
-                  fontSize: "12px",
-                  color: "var(--amber)",
-                  marginTop: "8px",
-                }}
-              >
-                You are approaching your storage limit. Upgrade your plan to
-                increase limit.
-              </p>
+              {planType === "starter" && (
+                <p
+                  style={{
+                    fontSize: "12px",
+                    color: "var(--ink2)",
+                    marginTop: "8px",
+                  }}
+                >
+                  Starter plan limit: 1 dataset.
+                </p>
+              )}
             </div>
 
             <div className="usage-wrap" style={{ marginTop: "32px" }}>
               <div className="usage-header">
                 <span>AI Chat Queries</span>
                 <span style={{ fontFamily: '"JetBrains Mono", monospace' }}>
-                  142 / 500
+                  {usage.aiQueriesUsed} /{" "}
+                  {planType === "starter" ? "20" : "Unlimited"}
                 </span>
               </div>
               <div className="usage-bar-bg">
                 <div
                   className="usage-bar-fill"
-                  style={{ width: "28%", background: "var(--teal)" }}
+                  style={{
+                    width:
+                      planType === "starter"
+                        ? `${(usage.aiQueriesUsed / 20) * 100}%`
+                        : "15%",
+                    background: "var(--teal)",
+                  }}
                 ></div>
               </div>
             </div>
@@ -960,12 +1398,32 @@ export default function SettingsPage() {
                 paddingBottom: "32px",
               }}
             >
-              <button
-                className="dash-btn dash-btn-primary"
-                onClick={() => setIsManagingPlan(true)}
-              >
-                Upgrade Plan
-              </button>
+              {planType === "starter" ? (
+                <button
+                  className="dash-btn dash-btn-primary"
+                  onClick={() => {
+                    setIsManagingPlan(true);
+                    setCheckoutStep("plans");
+                  }}
+                >
+                  Upgrade to Team
+                </button>
+              ) : (
+                <button
+                  className="dash-btn"
+                  onClick={() => {
+                    setIsManagingPlan(true);
+                    setCheckoutStep("plans");
+                  }}
+                  style={{
+                    background: "transparent",
+                    border: "1px solid var(--border)",
+                    color: "var(--ink)",
+                  }}
+                >
+                  Change Plan
+                </button>
+              )}
               <button
                 className="dash-btn"
                 onClick={() => setIsUpdatingPayment(true)}

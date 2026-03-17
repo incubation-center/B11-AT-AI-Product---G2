@@ -4,6 +4,7 @@ import React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useBilling } from "../contexts/BillingContext";
+import { ThemeToggle } from "../components/ThemeToggle";
 import "./dashboard.css";
 
 export default function DashboardLayout({
@@ -132,6 +133,20 @@ export default function DashboardLayout({
         </nav>
 
         <div className="dash-bottom-nav">
+          <div
+            style={{
+              padding: "10px 12px",
+              display: "flex",
+              alignItems: "center",
+              gap: "12px",
+              marginBottom: "4px",
+            }}
+          >
+            <ThemeToggle style={{ width: "32px", height: "32px" }} />
+            <span style={{ fontSize: "14px", color: "var(--ink2)" }}>
+              Theme Mode
+            </span>
+          </div>
           <Link
             href="/dashboard/settings"
             className={`dash-nav-item ${pathname === "/dashboard/settings" ? "active" : ""}`}
