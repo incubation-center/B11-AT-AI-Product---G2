@@ -3,8 +3,8 @@ RAG Service — orchestrates the full Retrieval-Augmented Generation pipeline.
 
 Flow:
 1. Index: chunk defects → embed → upsert to Pinecone + save references in Supabase
-2. Query: embed question → search Pinecone → build context → Gemini generates answer
-3. Suggestions: retrieve all chunks → Gemini generates QA improvement suggestions
+2. Query: embed question → search Pinecone → build context → OpenRouter generates answer
+3. Suggestions: retrieve all chunks → OpenRouter generates QA improvement suggestions
 """
 
 import logging
@@ -36,7 +36,7 @@ async def index_dataset(db: AsyncSession, dataset_id: int) -> dict:
     """
     Full indexing pipeline for a dataset:
     1. Fetch defects and chunk them
-    2. Generate embeddings via Gemini
+    2. Generate embeddings via sentence-transformers
     3. Upsert to Pinecone
     4. Save document references in Supabase (ai_documents table)
 
@@ -121,7 +121,7 @@ async def ask_question(
     1. Embed the question
     2. Search Pinecone for relevant chunks
     3. Build context from matched chunks
-    4. Generate answer with Gemini
+    4. Generate answer with OpenRouter
     5. Save query to ai_queries table
 
     Returns answer dict with source references.

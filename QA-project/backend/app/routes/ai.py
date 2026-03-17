@@ -47,7 +47,7 @@ async def index_dataset_endpoint(
     """
     Index a dataset for AI Q&A:
     1. Chunk defect data into text blocks
-    2. Generate embeddings via Gemini
+    2. Generate embeddings via sentence-transformers
     3. Upsert vectors to Pinecone
     4. Save document references in Supabase
     """
@@ -83,7 +83,7 @@ async def ask_question_endpoint(
     Ask a question about defect data using RAG:
     1. Embed the question
     2. Search Pinecone for relevant context
-    3. Generate answer with Gemini
+    3. Generate answer with OpenRouter
     """
     await _check_dataset_access(db, body.dataset_id, current_user)
 

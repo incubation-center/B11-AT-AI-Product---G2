@@ -1,13 +1,16 @@
 import os
 from pathlib import Path
+from typing import Optional
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from fastapi.responses import FileResponse
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select
 
 from app.database import get_db
 from app.models.users import User
 from app.dependencies.auth import get_current_user
+from app.services.auth_service import decode_access_token
 from app.services.report_service import generate_report, list_reports, get_report_by_id
 from app.services.log_service import log_activity
 from app.schemas.reports import (
@@ -89,10 +92,39 @@ async def get_reports(
 @router.get("/download/{report_id}")
 async def download_report(
     report_id: int,
+    token: Optional[str] = Query(None),
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_user),
 ):
-    """Download a generated report file."""
+    """Download a generated report file. Accepts token via query parameter for direct downloads."""
+    # Authenticate via query-parameter token (used by browser direct downloads)
+    if not token:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Missing token query parameter",
+        )
+
+    payload = decode_access_token(token)
+    if payload is None:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid or expired token",
+        )
+
+    user_id: int | None = payload.get("user_id")
+    if user_id is None:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid token payload",
+        )
+
+    result = await db.execute(select(User).where(User.user_id == user_id))
+    current_user = result.scalar_one_or_none()
+    if current_user is None:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="User not found",
+        )
+
     report = await get_report_by_id(db, report_id)
     if not report:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Report not found")

@@ -16,7 +16,7 @@ from app.models.datasets import Dataset
 
 logger = logging.getLogger(__name__)
 
-# Maximum characters per chunk (Gemini embedding model handles up to ~2048 tokens)
+# Maximum characters per chunk (embedding model handles up to ~2048 tokens)
 MAX_CHUNK_CHARS = 1500
 
 
