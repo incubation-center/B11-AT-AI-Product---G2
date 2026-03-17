@@ -1,130 +1,120 @@
 """
-Embedding Service — uses Google Gemini API to create text embeddings.
+Embedding Service — uses sentence-transformers for embeddings and OpenRouter for text generation.
 
-Uses the `gemini-embedding-001` model with output_dimensionality=768.
+Embeddings: all-MiniLM-L6-v2 (384-dim, padded to 768 for Pinecone compatibility)
+Generation: OpenRouter API (OpenAI-compatible) with google/gemini-2.0-flash-001
 """
 
 import asyncio
 import logging
-import re
 from typing import Optional
 
-from google import genai
-from google.genai import types
-from google.genai.errors import ClientError
+from openai import AsyncOpenAI
+from sentence_transformers import SentenceTransformer
 from app.config import settings
 
 logger = logging.getLogger(__name__)
 
-# Initialise the Gemini client once at module level
-client = genai.Client(api_key=settings.GEMINI_API_KEY)
+# Initialise OpenRouter client (OpenAI-compatible)
+openrouter_client = AsyncOpenAI(
+    base_url="https://openrouter.ai/api/v1",
+    api_key=settings.OPENROUTER_API_KEY,
+)
 
-# Gemini embedding model — output truncated to 768 dimensions for Pinecone
-EMBEDDING_MODEL = "gemini-embedding-001"
+# Local embedding model — produces 384-dim vectors, padded to 768 for Pinecone
+_embedding_model: SentenceTransformer | None = None
 EMBEDDING_DIM = 768
 
-# Gemini generative model for Q&A
-GENERATIVE_MODEL = "gemini-2.0-flash"
+# OpenRouter generative model
+GENERATIVE_MODEL = "google/gemini-2.0-flash-001"
 
-# Retry config for rate-limit (per-minute) errors
+# Retry config for rate-limit errors
 MAX_RETRIES = 2
 RETRY_BASE_DELAY = 15  # seconds
 
 
-def _extract_retry_delay(error: ClientError) -> float | None:
-    """Extract the retry delay from a 429 error message, if present."""
-    match = re.search(r"retry in ([\d.]+)s", str(error))
-    return float(match.group(1)) if match else None
+def _get_embedding_model() -> SentenceTransformer:
+    """Lazy-load the sentence-transformers model."""
+    global _embedding_model
+    if _embedding_model is None:
+        _embedding_model = SentenceTransformer("all-MiniLM-L6-v2")
+    return _embedding_model
 
 
-def _is_daily_quota_exhausted(error: ClientError) -> bool:
-    """Check whether the 429 error is a daily (unrecoverable) quota limit."""
-    return "PerDay" in str(error)
+def _pad_embedding(vec: list[float], target_dim: int = EMBEDDING_DIM) -> list[float]:
+    """Pad or truncate an embedding vector to target_dim."""
+    if len(vec) >= target_dim:
+        return vec[:target_dim]
+    return vec + [0.0] * (target_dim - len(vec))
 
 
-async def _generate_with_retry(model: str, contents: str) -> str:
-    """Call generate_content with automatic retry on per-minute rate limits."""
+async def _generate_with_retry(model: str, prompt: str) -> str:
+    """Call OpenRouter with automatic retry on rate limits."""
     last_error: Exception | None = None
     for attempt in range(1 + MAX_RETRIES):
         try:
-            response = client.models.generate_content(model=model, contents=contents)
-            return response.text.strip()
-        except ClientError as e:
-            if e.code != 429:
-                raise
-            # Daily quota → no point retrying
-            if _is_daily_quota_exhausted(e):
-                raise ValueError(
-                    "Gemini daily quota exhausted.  Please wait until the quota resets "
-                    "(usually midnight PT) or upgrade to a paid plan."
-                ) from e
-            # Per-minute quota → back off and retry
-            delay = _extract_retry_delay(e) or (RETRY_BASE_DELAY * (attempt + 1))
-            logger.warning(
-                f"Rate-limited (attempt {attempt + 1}/{1 + MAX_RETRIES}), "
-                f"retrying in {delay:.0f}s …"
+            response = await openrouter_client.chat.completions.create(
+                model=model,
+                messages=[{"role": "user", "content": prompt}],
             )
-            last_error = e
-            await asyncio.sleep(delay)
+            return response.choices[0].message.content.strip()
+        except Exception as e:
+            error_str = str(e)
+            if "429" in error_str or "rate" in error_str.lower():
+                delay = RETRY_BASE_DELAY * (attempt + 1)
+                logger.warning(
+                    f"Rate-limited (attempt {attempt + 1}/{1 + MAX_RETRIES}), "
+                    f"retrying in {delay:.0f}s …"
+                )
+                last_error = e
+                await asyncio.sleep(delay)
+            else:
+                raise
     raise last_error  # type: ignore[misc]
 
 
 async def create_embeddings(texts: list[str]) -> list[list[float]]:
     """
-    Create embeddings for a list of text strings using Gemini.
-    Returns a list of embedding vectors (768-dim each).
+    Create embeddings for a list of text strings using sentence-transformers.
+    Returns a list of embedding vectors (768-dim each, zero-padded).
     """
     if not texts:
         return []
 
-    if not settings.GEMINI_API_KEY:
-        raise ValueError("GEMINI_API_KEY is not configured")
-
-    embeddings: list[list[float]] = []
+    model = _get_embedding_model()
 
     try:
-        # google-genai supports batch embedding via embed_content
-        result = client.models.embed_content(
-            model=EMBEDDING_MODEL,
-            contents=texts,
-            config=types.EmbedContentConfig(output_dimensionality=EMBEDDING_DIM),
-        )
-        embeddings = [e.values for e in result.embeddings]
+        raw_embeddings = model.encode(texts, show_progress_bar=False)
+        embeddings = [_pad_embedding(vec.tolist()) for vec in raw_embeddings]
         logger.info(f"Created {len(embeddings)} embeddings (dim={len(embeddings[0]) if embeddings else 0})")
+        return embeddings
     except Exception as e:
-        logger.error(f"Gemini embedding error: {e}")
+        logger.error(f"Embedding error: {e}")
         raise
-
-    return embeddings
 
 
 async def create_query_embedding(query: str) -> list[float]:
     """
     Create a single embedding for a search query.
     """
-    if not settings.GEMINI_API_KEY:
-        raise ValueError("GEMINI_API_KEY is not configured")
+    model = _get_embedding_model()
 
     try:
-        result = client.models.embed_content(
-            model=EMBEDDING_MODEL,
-            contents=query,
-            config=types.EmbedContentConfig(output_dimensionality=EMBEDDING_DIM),
-        )
-        embedding = result.embeddings[0].values
+        raw = model.encode([query], show_progress_bar=False)
+        embedding = _pad_embedding(raw[0].tolist())
         logger.info(f"Created query embedding (dim={len(embedding)})")
         return embedding
     except Exception as e:
-        logger.error(f"Gemini query embedding error: {e}")
+        logger.error(f"Query embedding error: {e}")
         raise
 
 
 async def generate_answer(question: str, context: str, dataset_name: str = "") -> str:
     """
-    Use Gemini to generate an answer to a question using the provided context.
+    Use OpenRouter to generate an answer to a question using the provided context.
     """
-    if not settings.GEMINI_API_KEY:
-        raise ValueError("GEMINI_API_KEY is not configured")
+    if not settings.OPENROUTER_API_KEY:
+        raise ValueError("OPENROUTER_API_KEY is not configured")
 
     system_prompt = (
         "You are a QA Analytics AI Assistant. You analyze software defect data "
@@ -151,16 +141,16 @@ async def generate_answer(question: str, context: str, dataset_name: str = "") -
         logger.info(f"Generated AI answer ({len(answer)} chars)")
         return answer
     except Exception as e:
-        logger.error(f"Gemini generation error: {e}")
+        logger.error(f"OpenRouter generation error: {e}")
         raise
 
 
 async def generate_qa_suggestions(context: str, dataset_name: str = "") -> str:
     """
-    Use Gemini to generate QA improvement suggestions based on defect patterns.
+    Use OpenRouter to generate QA improvement suggestions based on defect patterns.
     """
-    if not settings.GEMINI_API_KEY:
-        raise ValueError("GEMINI_API_KEY is not configured")
+    if not settings.OPENROUTER_API_KEY:
+        raise ValueError("OPENROUTER_API_KEY is not configured")
 
     prompt = (
         "You are a QA Analytics AI Assistant specialized in software quality improvement.\n\n"
@@ -177,5 +167,5 @@ async def generate_qa_suggestions(context: str, dataset_name: str = "") -> str:
     try:
         return await _generate_with_retry(GENERATIVE_MODEL, prompt)
     except Exception as e:
-        logger.error(f"Gemini suggestion error: {e}")
+        logger.error(f"OpenRouter suggestion error: {e}")
         raise

@@ -53,7 +53,7 @@ async def upload_dataset(
             user_id=current_user.user_id,
             file_name=file.filename,
             file_bytes=file_bytes,
-            file_type=file.content_type or ext.lstrip("."),
+            file_type=ext.lstrip("."),
             upload_type=upload_type,
         )
     except ValueError as e:

@@ -14,13 +14,13 @@ logger = logging.getLogger(__name__)
 # Default column name mappings (lowercase). The parser tries these first,
 # then falls back to explicit user-provided mapping.
 DEFAULT_COLUMN_MAP = {
-    "bug_id": ["bug_id", "bug id", "defect_id", "defect id", "id", "ticket", "ticket_id"],
-    "title": ["title", "summary", "description", "defect_title", "bug_title", "name"],
+    "bug_id": ["bug_id", "bug id", "defect_id", "defect id", "id", "ticket", "ticket_id", "test_id", "test id", "testcase_id", "tc_id"],
+    "title": ["title", "summary", "description", "defect_title", "bug_title", "name", "test_steps", "test steps", "test_case", "test case", "scenario", "test_description", "test description", "test_name", "test name", "step_description"],
     "module": ["module", "component", "area", "feature", "module_name"],
-    "severity": ["severity", "sev", "severity_level"],
+    "severity": ["severity", "sev", "severity_level", "expected_result", "expected result", "expected_outcome"],
     "priority": ["priority", "pri", "priority_level"],
-    "environment": ["environment", "env", "platform", "test_environment"],
-    "status": ["status", "state", "defect_status", "bug_status"],
+    "environment": ["environment", "env", "platform", "test_environment", "test_data", "test data", "preconditions", "precondition"],
+    "status": ["status", "state", "defect_status", "bug_status", "evidence_required", "evidence required", "result"],
     "created_date": ["created_date", "created", "open_date", "opened", "date_created", "reported_date", "created_at"],
     "resolved_date": ["resolved_date", "resolved", "fixed_date", "fix_date", "resolved_at"],
     "closed_date": ["closed_date", "closed", "close_date", "closed_at"],
