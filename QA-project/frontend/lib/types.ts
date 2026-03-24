@@ -18,7 +18,6 @@ export interface AuthToken {
 
 export interface LoginResponse {
   user: User;
-  token: AuthToken;
 }
 
 export interface RegisterResponse {
@@ -31,7 +30,7 @@ export interface Dataset {
   user_id: number;
   file_name: string;
   file_type: string;
-  upload_type: "manual" | "jira" | "azure_devops";
+  upload_type: "manual" | "jira" | "azure_devops" | "github";
   uploaded_at: string;
   defect_count?: number;
 }

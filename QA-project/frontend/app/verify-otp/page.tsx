@@ -32,7 +32,7 @@ function VerifyOTPContent() {
 
     try {
       const response = await auth.verifyRegistration({ email, otp_code: otp });
-      setAuth(response.user, response.token.access_token);
+      setAuth(response.user);
       toast.success("Email verified successfully!");
       router.push("/dashboard");
     } catch (error) {

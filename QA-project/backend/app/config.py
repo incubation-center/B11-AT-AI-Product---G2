@@ -22,13 +22,18 @@ class Settings:
 
     # CORS
     CORS_ORIGINS: list[str] = [
-        "http://localhost:3000",  # Next.js frontend
+        "http://localhost:3000",
+        "http://localhost:3001",
+        "http://127.0.0.1:3000",
+        "http://127.0.0.1:3001",
     ]
 
     # JWT
     SECRET_KEY: str = os.getenv("SECRET_KEY", "change-me-in-production")
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60
+    AUTH_COOKIE_NAME: str = os.getenv("AUTH_COOKIE_NAME", "access_token")
+    COOKIE_SECURE: bool = os.getenv("COOKIE_SECURE", "false").lower() == "true"
 
     # Email / SMTP
     SMTP_HOST: str = os.getenv("SMTP_HOST", "smtp.gmail.com")

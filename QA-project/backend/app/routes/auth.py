@@ -1,7 +1,8 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Response, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from app.database import get_db
+from app.config import settings
 from app.models.users import User
 from app.schemas.auth import (
     UserRegister,
@@ -10,7 +11,6 @@ from app.schemas.auth import (
     ForgotPasswordRequest,
     ResetPasswordRequest,
     UserResponse,
-    TokenResponse,
     AuthResponse,
     MessageResponse,
 )
@@ -20,6 +20,18 @@ from app.services.email_service import send_otp_email
 from app.dependencies.auth import get_current_user
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
+
+
+def _set_auth_cookie(response: Response, access_token: str) -> None:
+    response.set_cookie(
+        key=settings.AUTH_COOKIE_NAME,
+        value=access_token,
+        httponly=True,
+        secure=settings.COOKIE_SECURE,
+        samesite="lax",
+        max_age=settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60,
+        path="/",
+    )
 
 
 # ─── Registration (2-step: register → verify OTP) ───────────────────
@@ -61,7 +73,11 @@ async def register(body: UserRegister, db: AsyncSession = Depends(get_db)):
 
 
 @router.post("/verify-registration", response_model=AuthResponse)
-async def verify_registration(body: VerifyOTP, db: AsyncSession = Depends(get_db)):
+async def verify_registration(
+    body: VerifyOTP,
+    response: Response,
+    db: AsyncSession = Depends(get_db),
+):
     """Step 2: Verify OTP to activate the account."""
 
     # Verify OTP
@@ -87,17 +103,21 @@ async def verify_registration(body: VerifyOTP, db: AsyncSession = Depends(get_db
 
     # Generate token
     access_token = create_access_token(data={"user_id": user.user_id, "email": user.email})
+    _set_auth_cookie(response, access_token)
 
     return AuthResponse(
         user=UserResponse.model_validate(user),
-        token=TokenResponse(access_token=access_token),
     )
 
 
 # ─── Login ───────────────────────────────────────────────────────────
 
 @router.post("/login", response_model=AuthResponse)
-async def login(body: UserLogin, db: AsyncSession = Depends(get_db)):
+async def login(
+    body: UserLogin,
+    response: Response,
+    db: AsyncSession = Depends(get_db),
+):
     """Login with email and password. Account must be verified."""
 
     result = await db.execute(select(User).where(User.email == body.email))
@@ -116,10 +136,10 @@ async def login(body: UserLogin, db: AsyncSession = Depends(get_db)):
         )
 
     access_token = create_access_token(data={"user_id": user.user_id, "email": user.email})
+    _set_auth_cookie(response, access_token)
 
     return AuthResponse(
         user=UserResponse.model_validate(user),
-        token=TokenResponse(access_token=access_token),
     )
 
 
@@ -194,3 +214,10 @@ async def resend_otp(body: ForgotPasswordRequest, db: AsyncSession = Depends(get
 async def get_me(current_user: User = Depends(get_current_user)):
     """Get the currently authenticated user's profile."""
     return UserResponse.model_validate(current_user)
+
+
+@router.post("/logout", response_model=MessageResponse)
+async def logout(response: Response):
+    """Clear the auth session cookie."""
+    response.delete_cookie(settings.AUTH_COOKIE_NAME, path="/")
+    return MessageResponse(message="Logged out successfully")

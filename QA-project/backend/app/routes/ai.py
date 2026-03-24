@@ -1,3 +1,5 @@
+import logging
+
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
@@ -23,6 +25,7 @@ from app.schemas.ai import (
 )
 
 router = APIRouter(prefix="/ai", tags=["AI"])
+logger = logging.getLogger(__name__)
 
 
 async def _check_dataset_access(db: AsyncSession, dataset_id: int, user: User) -> Dataset:
@@ -57,10 +60,11 @@ async def index_dataset_endpoint(
         result = await index_dataset(db, dataset_id)
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
-    except Exception as e:
+    except Exception:
+        logger.exception("Dataset indexing failed")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Indexing failed: {str(e)}",
+            detail="Indexing failed",
         )
 
     await log_activity(db, current_user.user_id, f"Indexed dataset {dataset_id} for AI ({result['chunks_created']} chunks)")
@@ -97,10 +101,11 @@ async def ask_question_endpoint(
         )
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
-    except Exception as e:
+    except Exception:
+        logger.exception("AI query failed")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"AI query failed: {str(e)}",
+            detail="AI query failed",
         )
 
     await log_activity(db, current_user.user_id, f"AI Q&A on dataset {body.dataset_id}: '{body.question[:50]}...'")
@@ -132,10 +137,11 @@ async def get_suggestions_endpoint(
         result = await get_suggestions(db, dataset_id)
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
-    except Exception as e:
+    except Exception:
+        logger.exception("Suggestion generation failed")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Suggestion generation failed: {str(e)}",
+            detail="Suggestion generation failed",
         )
 
     await log_activity(db, current_user.user_id, f"Generated AI suggestions for dataset {dataset_id}")

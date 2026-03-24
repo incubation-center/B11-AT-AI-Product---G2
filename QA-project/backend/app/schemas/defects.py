@@ -14,6 +14,9 @@ class DefectCreate(BaseModel):
     priority: Optional[str] = None
     environment: Optional[str] = None
     status: Optional[str] = None
+    test_steps: Optional[str] = None
+    expected_result: Optional[str] = None
+    preconditions: Optional[str] = None
     created_date: Optional[datetime] = None
     resolved_date: Optional[datetime] = None
     closed_date: Optional[datetime] = None
@@ -27,6 +30,9 @@ class DefectUpdate(BaseModel):
     priority: Optional[str] = None
     environment: Optional[str] = None
     status: Optional[str] = None
+    test_steps: Optional[str] = None
+    expected_result: Optional[str] = None
+    preconditions: Optional[str] = None
     created_date: Optional[datetime] = None
     resolved_date: Optional[datetime] = None
     closed_date: Optional[datetime] = None
@@ -44,6 +50,9 @@ class DefectResponse(BaseModel):
     priority: Optional[str] = None
     environment: Optional[str] = None
     status: Optional[str] = None
+    test_steps: Optional[str] = None
+    expected_result: Optional[str] = None
+    preconditions: Optional[str] = None
     created_date: Optional[datetime] = None
     resolved_date: Optional[datetime] = None
     closed_date: Optional[datetime] = None

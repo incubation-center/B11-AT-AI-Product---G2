@@ -106,9 +106,20 @@ export default function ReportsPage() {
     }
   };
 
-  const handleDownload = (reportId: number) => {
-    const url = reports.downloadUrl(reportId);
-    window.open(url, "_blank");
+  const handleDownload = async (reportId: number, fallbackFileName: string) => {
+    try {
+      const { blob, filename } = await reports.download(reportId);
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = filename || fallbackFileName || `report-${reportId}`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Failed to download report");
+    }
   };
 
   if (loading) {
@@ -261,7 +272,7 @@ export default function ReportsPage() {
                         <Button
                           variant="ghost"
                           size="sm"
-                          onClick={() => handleDownload(report.report_id)}
+                          onClick={() => handleDownload(report.report_id, report.file_name)}
                         >
                           <Download className="h-4 w-4 mr-2" />
                           Download

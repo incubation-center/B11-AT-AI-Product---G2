@@ -10,8 +10,8 @@ interface AuthContextType {
   token: string | null;
   loading: boolean;
   login: (email: string, password: string) => Promise<void>;
-  logout: () => void;
-  setAuth: (user: User, token: string) => void;
+  logout: () => Promise<void>;
+  setAuth: (user: User) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -29,36 +29,29 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     const initAuth = async () => {
-      const savedToken = getCookie("token");
       const savedUser = getCookie("user");
 
-      if (savedToken && savedUser) {
+      if (savedUser) {
         try {
           const parsedUser = JSON.parse(decodeURIComponent(savedUser));
-          setToken(savedToken);
           setUser(parsedUser);
-
-          // Verify token is still valid
-          try {
-            const currentUser = await authApi.me();
-            setUser(currentUser);
-            setCookie("user", encodeURIComponent(JSON.stringify(currentUser)));
-          } catch {
-            // Token invalid, clear auth
-            deleteCookie("token");
-            deleteCookie("user");
-            setToken(null);
-            setUser(null);
-            if (!isPublicPath) {
-              router.push("/login");
-            }
-          }
         } catch {
-          deleteCookie("token");
           deleteCookie("user");
         }
-      } else if (!isPublicPath) {
-        router.push("/login");
+      }
+
+      try {
+        const currentUser = await authApi.me();
+        setUser(currentUser);
+        setToken("session");
+        setCookie("user", encodeURIComponent(JSON.stringify(currentUser)));
+      } catch {
+        deleteCookie("user");
+        setToken(null);
+        setUser(null);
+        if (!isPublicPath) {
+          router.push("/login");
+        }
       }
 
       setLoading(false);
@@ -70,11 +63,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const login = useCallback(
     async (email: string, password: string) => {
       const response = await authApi.login({ email, password });
-      const { user: userData, token: tokenData } = response;
+      const { user: userData } = response;
 
       setUser(userData);
-      setToken(tokenData.access_token);
-      setCookie("token", tokenData.access_token);
+      setToken("session");
       setCookie("user", encodeURIComponent(JSON.stringify(userData)));
 
       router.push("/dashboard");
@@ -82,18 +74,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     [router]
   );
 
-  const logout = useCallback(() => {
+  const logout = useCallback(async () => {
+    try {
+      await authApi.logout();
+    } catch {
+      // Continue local cleanup even if server logout fails.
+    }
+
     setUser(null);
     setToken(null);
-    deleteCookie("token");
     deleteCookie("user");
     router.push("/login");
   }, [router]);
 
-  const setAuth = useCallback((userData: User, accessToken: string) => {
+  const setAuth = useCallback((userData: User) => {
     setUser(userData);
-    setToken(accessToken);
-    setCookie("token", accessToken);
+    setToken("session");
     setCookie("user", encodeURIComponent(JSON.stringify(userData)));
   }, []);
 

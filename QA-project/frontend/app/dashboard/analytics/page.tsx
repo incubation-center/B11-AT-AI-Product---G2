@@ -206,7 +206,7 @@ export default function AnalyticsPage() {
                       <p className="text-2xl font-bold text-foreground">
                         {dataLoading ? (
                           <Loader2 className="h-6 w-6 animate-spin" />
-                        ) : resolutionTime?.avg_days !== undefined ? (
+                        ) : resolutionTime?.avg_days != null ? (
                           `${resolutionTime.avg_days.toFixed(1)} days`
                         ) : (
                           "—"
@@ -233,7 +233,7 @@ export default function AnalyticsPage() {
                       <p className="text-2xl font-bold text-foreground">
                         {dataLoading ? (
                           <Loader2 className="h-6 w-6 animate-spin" />
-                        ) : reopenRate?.reopen_rate_percent !== undefined ? (
+                        ) : reopenRate?.reopen_rate_percent != null ? (
                           `${reopenRate.reopen_rate_percent.toFixed(1)}%`
                         ) : (
                           "—"
@@ -268,7 +268,7 @@ export default function AnalyticsPage() {
                       <p className="text-2xl font-bold text-foreground">
                         {dataLoading ? (
                           <Loader2 className="h-6 w-6 animate-spin" />
-                        ) : leakage?.leakage_rate_percent !== undefined ? (
+                        ) : leakage?.leakage_rate_percent != null ? (
                           `${leakage.leakage_rate_percent.toFixed(1)}%`
                         ) : (
                           "—"
@@ -297,21 +297,21 @@ export default function AnalyticsPage() {
                   ) : severity && severity.distribution.length > 0 ? (
                     <ResponsiveContainer width="100%" height={280}>
                       <BarChart data={severity.distribution}>
-                        <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                        <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
                         <XAxis
                           dataKey="severity"
-                          tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 12 }}
+                          tick={{ fill: "var(--muted-foreground)", fontSize: 12 }}
                         />
-                        <YAxis tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 12 }} />
+                        <YAxis tick={{ fill: "var(--muted-foreground)", fontSize: 12 }} />
                         <Tooltip
                           contentStyle={{
-                            backgroundColor: "hsl(var(--card))",
-                            border: "1px solid hsl(var(--border))",
+                            backgroundColor: "var(--card)",
+                            border: "1px solid var(--border)",
                             borderRadius: "8px",
                           }}
-                          labelStyle={{ color: "hsl(var(--foreground))" }}
+                          labelStyle={{ color: "var(--foreground)" }}
                         />
-                        <Bar dataKey="count" fill="hsl(var(--chart-1))" radius={[4, 4, 0, 0]} />
+                        <Bar dataKey="count" fill="var(--chart-1)" radius={[4, 4, 0, 0]} />
                       </BarChart>
                     </ResponsiveContainer>
                   ) : (
@@ -337,21 +337,21 @@ export default function AnalyticsPage() {
                   ) : leakage && leakage.environment_breakdown.length > 0 ? (
                     <ResponsiveContainer width="100%" height={280}>
                       <BarChart data={leakage.environment_breakdown}>
-                        <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                        <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
                         <XAxis
                           dataKey="environment"
-                          tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 12 }}
+                          tick={{ fill: "var(--muted-foreground)", fontSize: 12 }}
                         />
-                        <YAxis tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 12 }} />
+                        <YAxis tick={{ fill: "var(--muted-foreground)", fontSize: 12 }} />
                         <Tooltip
                           contentStyle={{
-                            backgroundColor: "hsl(var(--card))",
-                            border: "1px solid hsl(var(--border))",
+                            backgroundColor: "var(--card)",
+                            border: "1px solid var(--border)",
                             borderRadius: "8px",
                           }}
-                          labelStyle={{ color: "hsl(var(--foreground))" }}
+                          labelStyle={{ color: "var(--foreground)" }}
                         />
-                        <Bar dataKey="count" fill="hsl(var(--chart-5))" radius={[4, 4, 0, 0]} />
+                        <Bar dataKey="count" fill="var(--chart-5)" radius={[4, 4, 0, 0]} />
                       </BarChart>
                     </ResponsiveContainer>
                   ) : (
@@ -378,49 +378,49 @@ export default function AnalyticsPage() {
                 ) : severityResolution && severityResolution.data.length > 0 ? (
                   <ResponsiveContainer width="100%" height={280}>
                     <BarChart data={severityResolution.data}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                      <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
                       <XAxis
                         dataKey="severity"
-                        tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 12 }}
+                        tick={{ fill: "var(--muted-foreground)", fontSize: 12 }}
                       />
                       <YAxis
-                        tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 12 }}
+                        tick={{ fill: "var(--muted-foreground)", fontSize: 12 }}
                         label={{
                           value: "Days",
                           angle: -90,
                           position: "insideLeft",
-                          fill: "hsl(var(--muted-foreground))",
+                          fill: "var(--muted-foreground)",
                         }}
                       />
                       <Tooltip
                         contentStyle={{
-                          backgroundColor: "hsl(var(--card))",
-                          border: "1px solid hsl(var(--border))",
+                          backgroundColor: "var(--card)",
+                          border: "1px solid var(--border)",
                           borderRadius: "8px",
                         }}
-                        labelStyle={{ color: "hsl(var(--foreground))" }}
+                        labelStyle={{ color: "var(--foreground)" }}
                       />
                       <Legend
                         formatter={(value) => (
-                          <span style={{ color: "hsl(var(--foreground))" }}>{value}</span>
+                          <span style={{ color: "var(--foreground)" }}>{value}</span>
                         )}
                       />
                       <Bar
                         dataKey="avg_resolution_days"
                         name="Avg Days"
-                        fill="hsl(var(--chart-1))"
+                        fill="var(--chart-1)"
                         radius={[4, 4, 0, 0]}
                       />
                       <Bar
                         dataKey="min_resolution_days"
                         name="Min Days"
-                        fill="hsl(var(--chart-2))"
+                        fill="var(--chart-2)"
                         radius={[4, 4, 0, 0]}
                       />
                       <Bar
                         dataKey="max_resolution_days"
                         name="Max Days"
-                        fill="hsl(var(--chart-5))"
+                        fill="var(--chart-5)"
                         radius={[4, 4, 0, 0]}
                       />
                     </BarChart>
@@ -462,7 +462,7 @@ export default function AnalyticsPage() {
                           <TableCell className="font-medium">{module.module_name}</TableCell>
                           <TableCell className="text-right">{module.bug_count}</TableCell>
                           <TableCell className="text-right">
-                            {module.reopen_rate !== undefined
+                            {module.reopen_rate != null
                               ? `${(module.reopen_rate * 100).toFixed(1)}%`
                               : "—"}
                           </TableCell>

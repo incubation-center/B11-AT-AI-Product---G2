@@ -1,16 +1,16 @@
 import os
+import logging
 from pathlib import Path
-from typing import Optional
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.responses import FileResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 
 from app.database import get_db
 from app.models.users import User
+from app.models.datasets import Dataset
 from app.dependencies.auth import get_current_user
-from app.services.auth_service import decode_access_token
 from app.services.report_service import generate_report, list_reports, get_report_by_id
 from app.services.log_service import log_activity
 from app.schemas.reports import (
@@ -21,6 +21,18 @@ from app.schemas.reports import (
 )
 
 router = APIRouter(prefix="/reports", tags=["Reports"])
+logger = logging.getLogger(__name__)
+
+
+async def _check_dataset_access(db: AsyncSession, dataset_id: int, user: User) -> Dataset:
+    """Verify dataset exists and user has access."""
+    result = await db.execute(select(Dataset).where(Dataset.dataset_id == dataset_id))
+    dataset = result.scalar_one_or_none()
+    if not dataset:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Dataset not found")
+    if user.role != "admin" and dataset.user_id != user.user_id:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Access denied")
+    return dataset
 
 
 @router.post("/generate", response_model=GenerateReportResponse)
@@ -30,6 +42,8 @@ async def generate_report_endpoint(
     current_user: User = Depends(get_current_user),
 ):
     """Generate a report (PDF, CSV, or Excel) for a dataset."""
+    await _check_dataset_access(db, body.dataset_id, current_user)
+
     try:
         report = await generate_report(
             db=db,
@@ -57,11 +71,12 @@ async def generate_report_endpoint(
         )
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
-    except Exception as e:
+    except Exception:
         await db.rollback()
+        logger.exception("Report generation failed")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Report generation failed: {e}",
+            detail="Report generation failed",
         )
 
 
@@ -72,6 +87,8 @@ async def get_reports(
     current_user: User = Depends(get_current_user),
 ):
     """List all reports for a dataset."""
+    await _check_dataset_access(db, dataset_id, current_user)
+
     reports = await list_reports(db, dataset_id)
     return ReportListResponse(
         dataset_id=dataset_id,
@@ -92,38 +109,10 @@ async def get_reports(
 @router.get("/download/{report_id}")
 async def download_report(
     report_id: int,
-    token: Optional[str] = Query(None),
     db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ):
-    """Download a generated report file. Accepts token via query parameter for direct downloads."""
-    # Authenticate via query-parameter token (used by browser direct downloads)
-    if not token:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Missing token query parameter",
-        )
-
-    payload = decode_access_token(token)
-    if payload is None:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid or expired token",
-        )
-
-    user_id: int | None = payload.get("user_id")
-    if user_id is None:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid token payload",
-        )
-
-    result = await db.execute(select(User).where(User.user_id == user_id))
-    current_user = result.scalar_one_or_none()
-    if current_user is None:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="User not found",
-        )
+    """Download a generated report file for the authenticated user."""
 
     report = await get_report_by_id(db, report_id)
     if not report:

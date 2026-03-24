@@ -12,14 +12,13 @@ import { Loader2, Bug, AlertCircle, Clock, CheckCircle, RotateCcw, XCircle, BarC
 import { toast } from "sonner";
 import { BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from "recharts";
 
-const COLORS = ["hsl(var(--chart-1))", "hsl(var(--chart-2))", "hsl(var(--chart-3))", "hsl(var(--chart-4))", "hsl(var(--chart-5))"];
-
+/** Theme tokens are full colors (oklch) — use var() directly, not hsl(var(...)). */
 const STATUS_COLORS: Record<string, string> = {
-  open: "hsl(var(--chart-5))",
-  in_progress: "hsl(var(--chart-1))",
-  closed: "hsl(var(--chart-2))",
-  reopened: "hsl(var(--chart-4))",
-  unresolved: "hsl(var(--destructive))",
+  open: "var(--chart-5)",
+  in_progress: "var(--chart-1)",
+  closed: "var(--chart-2)",
+  reopened: "var(--chart-4)",
+  unresolved: "var(--destructive)",
 };
 
 export default function DashboardPage() {
@@ -176,18 +175,23 @@ export default function DashboardPage() {
                   ) : severity && severity.distribution.length > 0 ? (
                     <ResponsiveContainer width="100%" height={280}>
                       <BarChart data={severity.distribution}>
-                        <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                        <XAxis dataKey="severity" tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 12 }} />
-                        <YAxis tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 12 }} />
+                        <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
+                        <XAxis dataKey="severity" tick={{ fill: "var(--muted-foreground)", fontSize: 12 }} />
+                        <YAxis tick={{ fill: "var(--muted-foreground)", fontSize: 12 }} />
                         <Tooltip
                           contentStyle={{
-                            backgroundColor: "hsl(var(--card))",
-                            border: "1px solid hsl(var(--border))",
+                            backgroundColor: "#111827",
+                            border: "1px solid #374151",
                             borderRadius: "8px",
+                            color: "#ffffff",
+                            padding: "8px",
+                            fill: "#ffffff",
                           }}
-                          labelStyle={{ color: "hsl(var(--foreground))" }}
+                          labelStyle={{ color: "#ffffff", fontWeight: "500", fill: "#ffffff" }}
+                          itemStyle={{ color: "#ffffff" }}
+                          cursor={{ fill: "rgba(0, 0, 0, 0.1)" }}
                         />
-                        <Bar dataKey="count" fill="hsl(var(--chart-1))" radius={[4, 4, 0, 0]} />
+                        <Bar dataKey="count" fill="var(--chart-1)" radius={[4, 4, 0, 0]} />
                       </BarChart>
                     </ResponsiveContainer>
                   ) : (
@@ -227,13 +231,18 @@ export default function DashboardPage() {
                         </Pie>
                         <Tooltip
                           contentStyle={{
-                            backgroundColor: "hsl(var(--card))",
-                            border: "1px solid hsl(var(--border))",
+                            backgroundColor: "#111827",
+                            border: "1px solid #374151",
                             borderRadius: "8px",
+                            color: "#ffffff",
+                            padding: "8px",
+                            fill: "#ffffff",
                           }}
+                          labelStyle={{ color: "#ffffff", fontWeight: "500", fill: "#ffffff" }}
+                          itemStyle={{ color: "#ffffff" }}
                         />
                         <Legend
-                          formatter={(value) => <span style={{ color: "hsl(var(--foreground))" }}>{value}</span>}
+                          formatter={(value) => <span style={{ color: "var(--foreground)" }}>{value}</span>}
                         />
                       </PieChart>
                     </ResponsiveContainer>

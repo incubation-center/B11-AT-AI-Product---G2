@@ -29,6 +29,7 @@ import type {
 } from "./types";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
+const PUBLIC_PATHS = ["/login", "/register", "/verify-otp", "/forgot-password", "/reset-password"];
 
 function getCookie(name: string): string | null {
   if (typeof document === "undefined") return null;
@@ -42,12 +43,14 @@ function setCookie(name: string, value: string, days: number = 7) {
   if (typeof document === "undefined") return;
   const expires = new Date();
   expires.setTime(expires.getTime() + days * 24 * 60 * 60 * 1000);
-  document.cookie = `${name}=${value};expires=${expires.toUTCString()};path=/`;
+  const secure = typeof window !== "undefined" && window.location.protocol === "https:" ? ";Secure" : "";
+  document.cookie = `${name}=${value};expires=${expires.toUTCString()};path=/;SameSite=Lax${secure}`;
 }
 
 function deleteCookie(name: string) {
   if (typeof document === "undefined") return;
-  document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/`;
+  const secure = typeof window !== "undefined" && window.location.protocol === "https:" ? ";Secure" : "";
+  document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/;SameSite=Lax${secure}`;
 }
 
 export { getCookie, setCookie, deleteCookie };
@@ -65,14 +68,9 @@ async function request<T>(
   endpoint: string,
   options: RequestInit = {}
 ): Promise<T> {
-  const token = getCookie("token");
   const headers: HeadersInit = {
     ...options.headers,
   };
-
-  if (token) {
-    (headers as Record<string, string>)["Authorization"] = `Bearer ${token}`;
-  }
 
   if (!(options.body instanceof FormData)) {
     (headers as Record<string, string>)["Content-Type"] = "application/json";
@@ -81,14 +79,21 @@ async function request<T>(
   const response = await fetch(`${API_BASE_URL}${endpoint}`, {
     ...options,
     headers,
+    credentials: options.credentials ?? "include",
   });
 
   if (response.status === 401) {
-    deleteCookie("token");
     deleteCookie("user");
-    if (typeof window !== "undefined") {
-      window.location.href = "/login";
+
+    const shouldRedirect =
+      typeof window !== "undefined" &&
+      endpoint !== "/auth/me" &&
+      !PUBLIC_PATHS.some((path) => window.location.pathname.startsWith(path));
+
+    if (shouldRedirect) {
+      window.location.replace("/login");
     }
+
     throw new ApiError("Unauthorized", 401);
   }
 
@@ -146,6 +151,11 @@ export const auth = {
     }),
 
   me: () => request<User>("/auth/me"),
+
+  logout: () =>
+    request<{ message: string }>("/auth/logout", {
+      method: "POST",
+    }),
 };
 
 // Datasets API
@@ -165,6 +175,17 @@ export const datasets = {
       body: formData,
     });
   },
+
+  generateFromGithub: (data: {
+    clone_url: string;
+    branch?: string;
+    max_files?: number;
+    max_defects?: number;
+  }) =>
+    request<DatasetUploadResponse>("/datasets/generate-from-github", {
+      method: "POST",
+      body: JSON.stringify(data),
+    }),
 
   delete: (datasetId: number) =>
     request<void>(`/datasets/${datasetId}`, { method: "DELETE" }),
@@ -277,9 +298,34 @@ export const reports = {
   list: (datasetId: number) =>
     request<ReportsResponse>(`/reports/${datasetId}`),
 
-  downloadUrl: (reportId: number) => {
-    const token = getCookie("token");
-    return `${API_BASE_URL}/reports/download/${reportId}?token=${token}`;
+  download: async (reportId: number): Promise<{ blob: Blob; filename: string | null }> => {
+    const response = await fetch(`${API_BASE_URL}/reports/download/${reportId}`, {
+      method: "GET",
+      credentials: "include",
+    });
+
+    if (response.status === 401) {
+      deleteCookie("user");
+      if (typeof window !== "undefined") {
+        window.location.href = "/login";
+      }
+      throw new ApiError("Unauthorized", 401);
+    }
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new ApiError(
+        errorData.detail || errorData.message || "Request failed",
+        response.status
+      );
+    }
+
+    const disposition = response.headers.get("content-disposition") || "";
+    const match = disposition.match(/filename\*=UTF-8''([^;]+)|filename="?([^";]+)"?/i);
+    const filename = match ? decodeURIComponent(match[1] || match[2]) : null;
+    const blob = await response.blob();
+
+    return { blob, filename };
   },
 };
 

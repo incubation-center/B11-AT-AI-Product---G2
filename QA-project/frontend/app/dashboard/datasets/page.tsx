@@ -34,6 +34,9 @@ export default function DatasetsPage() {
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
   const [uploadType, setUploadType] = useState<"manual" | "jira" | "azure_devops">("manual");
+  const [githubUrl, setGithubUrl] = useState("");
+  const [githubBranch, setGithubBranch] = useState("");
+  const [generatingFromGithub, setGeneratingFromGithub] = useState(false);
   const [deleteId, setDeleteId] = useState<number | null>(null);
   const [deleting, setDeleting] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -86,6 +89,37 @@ export default function DatasetsPage() {
     }
   };
 
+  const handleGenerateFromGithub = async () => {
+    const url = githubUrl.trim();
+    if (!url) {
+      toast.error("Please paste a GitHub repository URL");
+      return;
+    }
+    if (!/^https:\/\/github\.com\/.+\/.+/.test(url)) {
+      toast.error("Only HTTPS GitHub URLs are supported (e.g. https://github.com/owner/repo)");
+      return;
+    }
+
+    const branch = githubBranch.trim() || undefined;
+
+    setGeneratingFromGithub(true);
+    try {
+      const response = await datasetsApi.generateFromGithub({
+        clone_url: url,
+        branch,
+      });
+      toast.success(`Successfully generated ${response.defects_imported} test cases`);
+      setGithubUrl("");
+      setGithubBranch("");
+      setPage(1);
+      fetchDatasets();
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Generation failed");
+    } finally {
+      setGeneratingFromGithub(false);
+    }
+  };
+
   const handleDelete = async () => {
     if (!deleteId) return;
 
@@ -109,11 +143,13 @@ export default function DatasetsPage() {
       manual: "default",
       jira: "secondary",
       azure_devops: "outline",
+      github: "outline",
     };
     const labels: Record<string, string> = {
       manual: "Manual",
       jira: "Jira",
       azure_devops: "Azure DevOps",
+      github: "GitHub",
     };
     return <Badge variant={variants[source] || "default"}>{labels[source] || source}</Badge>;
   };
@@ -176,6 +212,47 @@ export default function DatasetsPage() {
                   <span className="text-sm">Uploading...</span>
                 </div>
               )}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* GitHub Generate Section */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Generate from GitHub URL</CardTitle>
+            <CardDescription>
+              Paste a public GitHub repo HTTPS URL. We will derive testcases and create a testcase document.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="flex flex-wrap items-end gap-4">
+              <div className="flex flex-col gap-2">
+                <Label>Clone URL</Label>
+                <Input
+                  value={githubUrl}
+                  onChange={(e) => setGithubUrl(e.target.value)}
+                  placeholder="https://github.com/owner/repo"
+                  disabled={generatingFromGithub}
+                  className="w-96"
+                />
+              </div>
+
+              <div className="flex flex-col gap-2">
+                <Label>Branch (optional)</Label>
+                <Input
+                  value={githubBranch}
+                  onChange={(e) => setGithubBranch(e.target.value)}
+                  placeholder="main"
+                  disabled={generatingFromGithub}
+                  className="w-64"
+                />
+              </div>
+
+              <div className="flex items-center gap-3">
+                <Button onClick={handleGenerateFromGithub} disabled={generatingFromGithub}>
+                  {generatingFromGithub ? "Generating..." : "Generate"}
+                </Button>
+              </div>
             </div>
           </CardContent>
         </Card>
