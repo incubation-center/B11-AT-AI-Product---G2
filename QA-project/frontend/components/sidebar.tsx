@@ -16,7 +16,6 @@ import {
   BotMessageSquare,
   FileText,
   Users,
-  LogOut,
 } from "lucide-react";
 
 const navItems = [
@@ -34,7 +33,7 @@ const adminItems = [
 
 export function Sidebar() {
   const pathname = usePathname();
-  const { user, logout } = useAuth();
+  const { user } = useAuth();
 
   const isActive = (href: string) => {
     if (href === "/dashboard") {
@@ -106,21 +105,6 @@ export function Sidebar() {
             )}
           </nav>
         </ScrollArea>
-
-        <div className="border-t border-border p-3">
-          <div className="mb-2 px-3 py-2">
-            <p className="text-sm font-medium text-foreground truncate">{user?.name}</p>
-            <p className="text-xs text-muted-foreground truncate">{user?.email}</p>
-          </div>
-          <Button
-            variant="ghost"
-            className="w-full justify-start gap-3 text-muted-foreground hover:text-foreground"
-            onClick={logout}
-          >
-            <LogOut className="h-4 w-4" />
-            Logout
-          </Button>
-        </div>
       </div>
     </div>
   );

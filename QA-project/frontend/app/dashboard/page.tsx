@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import Link from "next/link";
 import { datasets, analytics } from "@/lib/api";
 import type { Dataset, DefectSummary, SeverityResponse } from "@/lib/types";
@@ -10,7 +10,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { Loader2, Bug, AlertCircle, Clock, CheckCircle, RotateCcw, XCircle, BarChart3, BotMessageSquare, FileText } from "lucide-react";
 import { toast } from "sonner";
-import { BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from "recharts";
+import { BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Label, Sector } from "recharts";
+import type { PieSectorShapeProps } from "recharts/types/polar/Pie";
 
 /** Theme tokens are full colors (oklch) — use var() directly, not hsl(var(...)). */
 const STATUS_COLORS: Record<string, string> = {
@@ -28,6 +29,7 @@ export default function DashboardPage() {
   const [severity, setSeverity] = useState<SeverityResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [dataLoading, setDataLoading] = useState(false);
+  const [activeStatus, setActiveStatus] = useState<string>("");
 
   useEffect(() => {
     const fetchDatasets = async () => {
@@ -78,6 +80,44 @@ export default function DashboardPage() {
         { name: "Unresolved", value: summary.unresolved, fill: STATUS_COLORS.unresolved },
       ]
     : [];
+
+  useEffect(() => {
+    if (statusData.length === 0) {
+      setActiveStatus("");
+      return;
+    }
+
+    if (!statusData.some((item) => item.name === activeStatus)) {
+      const firstAvailableStatus = statusData.find((item) => item.value > 0)?.name ?? statusData[0].name;
+      setActiveStatus(firstAvailableStatus);
+    }
+  }, [statusData, activeStatus]);
+
+  const activeStatusIndex = useMemo(
+    () => statusData.findIndex((item) => item.name === activeStatus),
+    [statusData, activeStatus]
+  );
+
+  const activeStatusSlice =
+    activeStatusIndex >= 0 ? statusData[activeStatusIndex] : statusData[0] ?? { name: "Status", value: 0, fill: "var(--muted)" };
+
+  const renderStatusPieShape = useCallback(
+    ({ index, outerRadius = 0, ...props }: PieSectorShapeProps) => {
+      const baseRadius = typeof outerRadius === "number" ? outerRadius : Number(outerRadius) || 0;
+
+      if (index === activeStatusIndex) {
+        return (
+          <g>
+            <Sector {...props} outerRadius={baseRadius + 8} />
+            <Sector {...props} outerRadius={baseRadius + 20} innerRadius={baseRadius + 10} />
+          </g>
+        );
+      }
+
+      return <Sector {...props} outerRadius={baseRadius} />;
+    },
+    [activeStatusIndex]
+  );
 
   const statCards = [
     { title: "Total Defects", value: summary?.total ?? 0, icon: Bug, color: "text-foreground" },
@@ -204,9 +244,26 @@ export default function DashboardPage() {
 
               {/* Status Distribution */}
               <Card>
-                <CardHeader>
-                  <CardTitle className="text-base">Defect Status</CardTitle>
-                  <CardDescription>Distribution by current status</CardDescription>
+                <CardHeader className="relative space-y-0 pb-2">
+                  <div>
+                    <CardTitle className="text-base">Defect Status</CardTitle>
+                    <CardDescription>Distribution by current status</CardDescription>
+                  </div>
+                  <Select value={activeStatus} onValueChange={setActiveStatus}>
+                    <SelectTrigger className="absolute right-6 top-6 h-8 w-37.5 rounded-md">
+                      <SelectValue placeholder="Select status" />
+                    </SelectTrigger>
+                    <SelectContent align="end">
+                      {statusData.map((item) => (
+                        <SelectItem key={item.name} value={item.name}>
+                          <div className="flex items-center gap-2 text-xs">
+                            <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: item.fill }} />
+                            {item.name}
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </CardHeader>
                 <CardContent>
                   {dataLoading ? (
@@ -224,26 +281,46 @@ export default function DashboardPage() {
                           outerRadius={100}
                           paddingAngle={2}
                           dataKey="value"
+                          strokeWidth={3}
+                          shape={renderStatusPieShape}
+                          onMouseEnter={(_, index) => {
+                            if (statusData[index]) {
+                              setActiveStatus(statusData[index].name);
+                            }
+                          }}
+                          onClick={(_, index) => {
+                            if (statusData[index]) {
+                              setActiveStatus(statusData[index].name);
+                            }
+                          }}
                         >
                           {statusData.map((entry, index) => (
                             <Cell key={`cell-${index}`} fill={entry.fill} />
                           ))}
+
+                          <Label
+                            content={({ viewBox }) => {
+                              if (viewBox && "cx" in viewBox && "cy" in viewBox) {
+                                return (
+                                  <text
+                                    x={viewBox.cx}
+                                    y={viewBox.cy}
+                                    textAnchor="middle"
+                                    dominantBaseline="middle"
+                                  >
+                                    <tspan x={viewBox.cx} y={viewBox.cy} className="fill-foreground text-3xl font-bold">
+                                      {activeStatusSlice.value.toLocaleString()}
+                                    </tspan>
+                                    <tspan x={viewBox.cx} y={(viewBox.cy || 0) + 22} className="fill-muted-foreground">
+                                      {activeStatusSlice.name}
+                                    </tspan>
+                                  </text>
+                                );
+                              }
+                              return null;
+                            }}
+                          />
                         </Pie>
-                        <Tooltip
-                          contentStyle={{
-                            backgroundColor: "#111827",
-                            border: "1px solid #374151",
-                            borderRadius: "8px",
-                            color: "#ffffff",
-                            padding: "8px",
-                            fill: "#ffffff",
-                          }}
-                          labelStyle={{ color: "#ffffff", fontWeight: "500", fill: "#ffffff" }}
-                          itemStyle={{ color: "#ffffff" }}
-                        />
-                        <Legend
-                          formatter={(value) => <span style={{ color: "var(--foreground)" }}>{value}</span>}
-                        />
                       </PieChart>
                     </ResponsiveContainer>
                   ) : (
