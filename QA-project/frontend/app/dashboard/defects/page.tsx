@@ -7,6 +7,7 @@ import { Topbar } from "@/components/topbar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
@@ -69,6 +70,12 @@ const getStatusColor = (status: string | undefined) => {
       return "bg-secondary text-secondary-foreground";
   }
 };
+
+const isKnownSeverity = (severity: string | undefined) =>
+  !!severity && SEVERITIES.some((value) => value.toLowerCase() === severity.toLowerCase());
+
+const isKnownStatus = (status: string | undefined) =>
+  !!status && STATUSES.some((value) => value.toLowerCase() === status.toLowerCase());
 
 interface DefectFormData {
   bug_id: string;
@@ -372,42 +379,70 @@ export default function DefectsPage() {
               </div>
             ) : (
               <>
-                <Table>
+                <Table className="table-fixed">
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Bug ID</TableHead>
-                      <TableHead>Title</TableHead>
-                      <TableHead>Module</TableHead>
-                      <TableHead>Severity</TableHead>
-                      <TableHead>Priority</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Environment</TableHead>
-                      <TableHead>Created</TableHead>
+                      <TableHead className="w-30">Bug ID</TableHead>
+                      <TableHead className="w-[30%]">Title</TableHead>
+                      <TableHead className="w-45">Module</TableHead>
+                      <TableHead className="w-30">Severity</TableHead>
+                      <TableHead className="w-24">Priority</TableHead>
+                      <TableHead className="w-35">Status</TableHead>
+                      <TableHead className="w-45">Environment</TableHead>
+                      <TableHead className="w-30">Created</TableHead>
                       <TableHead className="w-24">Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {defectList.map((defect) => (
                       <TableRow key={defect.defect_id}>
-                        <TableCell className="font-mono text-sm">{defect.bug_id || "—"}</TableCell>
-                        <TableCell className="max-w-xs truncate font-medium">{defect.title}</TableCell>
-                        <TableCell>{defect.module || "—"}</TableCell>
+                        <TableCell className="font-mono text-sm truncate" title={defect.bug_id || ""}>
+                          {defect.bug_id || "—"}
+                        </TableCell>
+                        <TableCell className="truncate font-medium" title={defect.title}>
+                          {defect.title}
+                        </TableCell>
+                        <TableCell className="truncate" title={defect.module || ""}>
+                          {defect.module || "—"}
+                        </TableCell>
                         <TableCell>
-                          {defect.severity ? (
-                            <Badge className={getSeverityColor(defect.severity)}>{defect.severity}</Badge>
+                          {defect.severity ? isKnownSeverity(defect.severity) ? (
+                            <Badge
+                              className={`${getSeverityColor(defect.severity)} inline-block max-w-28 truncate align-middle`}
+                              title={defect.severity}
+                            >
+                              {defect.severity}
+                            </Badge>
+                          ) : (
+                            <span className="block truncate text-muted-foreground" title={defect.severity}>
+                              {defect.severity}
+                            </span>
                           ) : (
                             "—"
                           )}
                         </TableCell>
-                        <TableCell>{defect.priority || "—"}</TableCell>
+                        <TableCell className="truncate" title={defect.priority || ""}>
+                          {defect.priority || "—"}
+                        </TableCell>
                         <TableCell>
-                          {defect.status ? (
-                            <Badge className={getStatusColor(defect.status)}>{defect.status}</Badge>
+                          {defect.status ? isKnownStatus(defect.status) ? (
+                            <Badge
+                              className={`${getStatusColor(defect.status)} inline-block max-w-32 truncate align-middle`}
+                              title={defect.status}
+                            >
+                              {defect.status}
+                            </Badge>
+                          ) : (
+                            <span className="block truncate text-muted-foreground" title={defect.status}>
+                              {defect.status}
+                            </span>
                           ) : (
                             "—"
                           )}
                         </TableCell>
-                        <TableCell>{defect.environment || "—"}</TableCell>
+                        <TableCell className="truncate" title={defect.environment || ""}>
+                          {defect.environment || "—"}
+                        </TableCell>
                         <TableCell>
                           {defect.created_date
                             ? format(new Date(defect.created_date), "MMM d, yyyy")
@@ -498,11 +533,13 @@ export default function DefectsPage() {
             </div>
             <div className="flex flex-col gap-2">
               <Label htmlFor="title">Title *</Label>
-              <Input
+              <Textarea
                 id="title"
                 value={form.title}
                 onChange={(e) => setForm({ ...form, title: e.target.value })}
                 placeholder="Defect title"
+                rows={4}
+                className="field-sizing-fixed h-24 min-h-24 max-h-24 resize-none overflow-x-hidden overflow-y-auto break-all"
               />
             </div>
             <div className="grid grid-cols-3 gap-4">
@@ -591,39 +628,43 @@ export default function DefectsPage() {
 
       {/* Edit Dialog */}
       <Dialog open={editDefect !== null} onOpenChange={(open) => !open && setEditDefect(null)}>
-        <DialogContent>
+        <DialogContent className="max-h-[90vh] max-w-[90vw] overflow-y-auto sm:max-w-2xl">
           <DialogHeader>
             <DialogTitle>Edit Defect</DialogTitle>
             <DialogDescription>Update the defect details</DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="flex flex-col gap-2">
+            <div className="grid min-w-0 grid-cols-2 gap-4">
+              <div className="min-w-0 flex flex-col gap-2">
                 <Label htmlFor="edit_bug_id">Bug ID</Label>
                 <Input
                   id="edit_bug_id"
                   value={form.bug_id}
                   onChange={(e) => setForm({ ...form, bug_id: e.target.value })}
                   placeholder="BUG-001"
+                  className="min-w-0"
                 />
               </div>
-              <div className="flex flex-col gap-2">
+              <div className="min-w-0 flex flex-col gap-2">
                 <Label htmlFor="edit_module">Module</Label>
                 <Input
                   id="edit_module"
                   value={form.module}
                   onChange={(e) => setForm({ ...form, module: e.target.value })}
                   placeholder="Authentication"
+                  className="min-w-0"
                 />
               </div>
             </div>
             <div className="flex flex-col gap-2">
               <Label htmlFor="edit_title">Title *</Label>
-              <Input
+              <Textarea
                 id="edit_title"
                 value={form.title}
                 onChange={(e) => setForm({ ...form, title: e.target.value })}
                 placeholder="Defect title"
+                rows={4}
+                className="field-sizing-fixed h-24 min-h-24 max-h-24 resize-none overflow-x-hidden overflow-y-auto break-all"
               />
             </div>
             <div className="grid grid-cols-3 gap-4">
@@ -741,3 +782,4 @@ export default function DefectsPage() {
     </>
   );
 }
+

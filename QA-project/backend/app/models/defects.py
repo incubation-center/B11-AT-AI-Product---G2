@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, DateTime, ForeignKey
+from sqlalchemy import Column, Integer, String, DateTime, Text, ForeignKey
 from sqlalchemy.orm import relationship
 from app.database import Base
 
@@ -15,6 +15,9 @@ class Defect(Base):
     priority = Column(String(50))
     environment = Column(String(100))
     status = Column(String(50))
+    test_steps = Column(Text)
+    expected_result = Column(Text)
+    preconditions = Column(Text)
     created_date = Column(DateTime)
     resolved_date = Column(DateTime)
     closed_date = Column(DateTime)

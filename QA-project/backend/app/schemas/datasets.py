@@ -40,3 +40,10 @@ class ColumnMappingRequest(BaseModel):
     created_date: Optional[str] = None
     resolved_date: Optional[str] = None
     closed_date: Optional[str] = None
+
+
+class GenerateFromGithubRequest(BaseModel):
+    clone_url: str
+    branch: Optional[str] = None
+    max_files: int = 20
+    max_defects: int = 50

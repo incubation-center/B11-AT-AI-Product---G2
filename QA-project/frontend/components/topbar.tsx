@@ -12,6 +12,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { LogOut, User } from "lucide-react";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 interface TopbarProps {
   title: string;
@@ -39,7 +40,8 @@ export function Topbar({ title, description }: TopbarProps) {
         )}
       </div>
 
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-3">
+        <ThemeToggle />
         <DropdownMenu>
           <DropdownMenuTrigger className="flex items-center gap-2 outline-none">
             <Avatar className="h-8 w-8">

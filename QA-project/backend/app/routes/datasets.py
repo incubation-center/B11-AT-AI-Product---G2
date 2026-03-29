@@ -8,8 +8,9 @@ from app.models.users import User
 from app.models.datasets import Dataset
 from app.models.defects import Defect
 from app.dependencies.auth import get_current_user
-from app.schemas.datasets import DatasetResponse, DatasetListResponse, DatasetUploadResponse
+from app.schemas.datasets import DatasetResponse, DatasetListResponse, DatasetUploadResponse, GenerateFromGithubRequest
 from app.services.dataset_service import parse_and_import
+from app.services.github_to_dataset_service import generate_dataset_from_github
 from app.services.log_service import log_activity
 
 router = APIRouter(prefix="/datasets", tags=["Datasets"])
@@ -75,6 +76,57 @@ async def upload_dataset(
         dataset=resp,
         defects_imported=defect_count,
         message=f"Successfully imported {defect_count} defects from '{file.filename}'",
+    )
+
+
+@router.post(
+    "/generate-from-github",
+    response_model=DatasetUploadResponse,
+    status_code=status.HTTP_201_CREATED,
+)
+async def generate_from_github(
+    body: GenerateFromGithubRequest,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """
+    Generate a testcase document from a GitHub repository URL.
+
+    Note: This creates a Dataset + related Defect rows so it appears in the app
+    as a "Testcase Document".
+    """
+    try:
+        dataset, defect_count = await generate_dataset_from_github(
+            db=db,
+            user_id=current_user.user_id,
+            clone_url=body.clone_url,
+            branch=body.branch,
+            max_files=body.max_files,
+            max_defects=body.max_defects,
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(e))
+
+    await log_activity(
+        db,
+        current_user.user_id,
+        f"Generated dataset from GitHub '{body.clone_url}' ({defect_count} testcases)",
+    )
+
+    resp = DatasetResponse(
+        dataset_id=dataset.dataset_id,
+        user_id=dataset.user_id,
+        file_name=dataset.file_name,
+        file_type=dataset.file_type,
+        upload_type=dataset.upload_type,
+        uploaded_at=dataset.uploaded_at,
+        defect_count=defect_count,
+    )
+
+    return DatasetUploadResponse(
+        dataset=resp,
+        defects_imported=defect_count,
+        message=f"Successfully generated {defect_count} test cases from '{body.clone_url}'",
     )
 
 
