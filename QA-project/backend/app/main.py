@@ -1,12 +1,23 @@
+from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.config import settings
 from app.routes import auth, users, datasets, defects, analytics, ai, reports
+from app.services.telegram_service import start_bot, stop_bot
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Startup: Start Telegram Bot
+    await start_bot()
+    yield
+    # Shutdown: Stop Telegram Bot
+    await stop_bot()
 
 app = FastAPI(
     title="QA Analytics API",
     description="Backend API for QA Defect Analytics with AI-powered insights",
     version="1.0.0",
+    lifespan=lifespan,
 )
 
 # CORS middleware — allows Next.js frontend to call the API

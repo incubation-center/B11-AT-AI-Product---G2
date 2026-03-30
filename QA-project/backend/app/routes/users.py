@@ -7,6 +7,7 @@ from app.models.users import User
 from app.dependencies.auth import get_current_user
 from app.schemas.users import UserDetail, UserListResponse, UpdateUserRole, UpdateUserProfile
 from app.services.log_service import log_activity
+from app.services.otp_service import create_otp
 
 router = APIRouter(prefix="/users", tags=["Users"])
 
@@ -96,6 +97,19 @@ async def update_my_profile(
     await db.refresh(current_user)
     await log_activity(db, current_user.user_id, "Updated own profile")
     return UserDetail.model_validate(current_user)
+
+@router.get("/me/telegram-link-code")
+async def get_telegram_link_code(
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """
+    Generate a 6-digit code for linking the user's account to Telegram.
+    Returns the code, which the user should type in Telegram: /link <code>
+    """
+    code = await create_otp(db, current_user.email, "telegram_link")
+    await db.commit()
+    return {"code": code}
 
 
 # ─── Update user role (admin) ───────────────────────────────────────

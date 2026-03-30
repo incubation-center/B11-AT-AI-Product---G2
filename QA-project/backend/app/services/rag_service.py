@@ -115,6 +115,7 @@ async def ask_question(
     dataset_id: int,
     question: str,
     top_k: int = 5,
+    chat_history: Optional[list[dict]] = None,
 ) -> dict:
     """
     RAG Q&A pipeline:
@@ -181,7 +182,7 @@ async def ask_question(
     dataset_name = ds_result.scalar() or f"Dataset {dataset_id}"
 
     # 5. Generate answer
-    answer = await generate_answer(question, context, dataset_name)
+    answer = await generate_answer(question, context, dataset_name, chat_history)
 
     # 6. Save query record
     query_record = AIQuery(
