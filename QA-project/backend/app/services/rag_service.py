@@ -98,6 +98,7 @@ async def index_dataset(db: AsyncSession, dataset_id: int) -> dict:
     # Save document references to Supabase
     db.add_all(doc_records)
     await db.flush()
+    await db.commit()
 
     logger.info(f"Indexed dataset {dataset_id}: {len(vectors)} vectors upserted")
 
