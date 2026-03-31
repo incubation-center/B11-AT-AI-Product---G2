@@ -99,11 +99,16 @@ class TelegramBotService:
         async with AsyncSessionLocal() as db:
             try:
                 db_user = await cls._get_linked_user(db, update.effective_user.id)
-                user_id = db_user.user_id if db_user else 1
                 
+                if not db_user:
+                    await update.message.reply_text("Your Telegram is not linked to any account. Use /link [code] to connect.")
+                    return
+
+                user_id = db_user.user_id
                 dataset = await cls._get_active_dataset(db, user_id, context)
+                
                 if not dataset:
-                    await update.message.reply_text("No linked dataset found. Use /link to connect your account or upload data first.")
+                    await update.message.reply_text(f"Hello {db_user.name}! You are linked, but you haven't uploaded any datasets yet. Please upload data on the web platform first.")
                     return
 
                 from app.services.analytics_service import get_severity_distribution
@@ -111,8 +116,11 @@ class TelegramBotService:
                 
                 filename = html.escape(dataset.file_name)
                 msg = f"📊 <b>Status: {filename}</b>\n\n"
-                for s in stats:
-                    msg += f"• {s['severity']}: {s['count']} ({s['percentage']}%)\n"
+                if not stats:
+                    msg += "No data found in this dataset."
+                else:
+                    for s in stats:
+                        msg += f"• {s['severity']}: {s['count']} ({s['percentage']}%)\n"
                 
                 await update.message.reply_html(msg)
             except Exception as e:
@@ -130,11 +138,14 @@ class TelegramBotService:
         async with AsyncSessionLocal() as db:
             try:
                 db_user = await cls._get_linked_user(db, update.effective_user.id)
-                user_id = db_user.user_id if db_user else 1
-                
+                if not db_user:
+                    await update.message.reply_text("Please link your account first using /link [code].")
+                    return
+
+                user_id = db_user.user_id
                 dataset = await cls._get_active_dataset(db, user_id, context)
                 if not dataset:
-                    await update.message.reply_text("Please upload a dataset first.")
+                    await update.message.reply_text("Please upload a dataset on the web platform first.")
                     return
 
                 history = context.user_data.get("chat_history", [])
@@ -156,9 +167,15 @@ class TelegramBotService:
         async with AsyncSessionLocal() as db:
             try:
                 db_user = await cls._get_linked_user(db, update.effective_user.id)
-                user_id = db_user.user_id if db_user else 1
+                if not db_user:
+                    await update.message.reply_text("Please link your account first using /link [code].")
+                    return
+                
+                user_id = db_user.user_id
                 dataset = await cls._get_active_dataset(db, user_id, context)
-                if not dataset: return
+                if not dataset:
+                    await update.message.reply_text("Please upload and select a dataset first.")
+                    return
                 
                 history = context.user_data.get("chat_history", [])
                 response = await ask_question(db, user_id, dataset.dataset_id, update.message.text, chat_history=history)
@@ -183,32 +200,61 @@ class TelegramBotService:
         
         async with AsyncSessionLocal() as db:
             try:
-                otp_res = await db.execute(select(OTPCode).where(and_(OTPCode.otp_code == context.args[0], OTPCode.purpose == "telegram_link", OTPCode.is_used == 0, OTPCode.expires_at > datetime.utcnow())))
-                otp = otp_res.scalar_one_or_none()
+                # 1. Check if Telegram ID already linked
+                existing_user = await cls._get_linked_user(db, update.effective_user.id)
+                if existing_user:
+                    await update.message.reply_text(f"Your account is already linked to {existing_user.name} ({existing_user.email}).")
+                    return
+
+                # 2. Check the code
+                code = context.args[0].strip()
+                otp_res = await db.execute(
+                    select(OTPCode).where(
+                        and_(OTPCode.otp_code == code, OTPCode.purpose == "telegram_link")
+                    ).order_by(OTPCode.created_at.desc())
+                )
+                otp = otp_res.scalars().first()
+                
                 if not otp:
-                    await update.message.reply_text("Invalid/Expired code.")
+                    await update.message.reply_text("Invalid code. Please generate a new one from Settings.")
                     return
                 
+                if otp.is_used:
+                    await update.message.reply_text("This code has already been used. Please generate a new one.")
+                    return
+                
+                if otp.expires_at < datetime.utcnow():
+                    await update.message.reply_text("This code has expired. Please generate a new one.")
+                    return
+                
+                # 3. Find user and link
                 user_res = await db.execute(select(User).where(User.email == otp.email))
                 user = user_res.scalar_one_or_none()
-                if not user: return
+                if not user:
+                    await update.message.reply_text("User account not found.")
+                    return
                 
                 user.telegram_id = str(update.effective_user.id)
                 otp.is_used = 1
                 await db.commit()
-                await update.message.reply_text(f"Linked to {user.name}!")
-            except Exception:
-                await update.message.reply_text("Linking failed.")
+                await update.message.reply_text(f"Successfully linked to {user.name}!")
+            except Exception as e:
+                logger.error(f"Link error: {e}")
+                await update.message.reply_text("Linking failed due to a system error.")
 
     @classmethod
     async def datasets_command(cls, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         async with AsyncSessionLocal() as db:
             db_user = await cls._get_linked_user(db, update.effective_user.id)
-            user_id = db_user.user_id if db_user else 1
+            if not db_user:
+                await update.message.reply_text("Please link your account first using /link [code].")
+                return
+            
+            user_id = db_user.user_id
             res = await db.execute(select(Dataset).where(Dataset.user_id == user_id).order_by(Dataset.uploaded_at.desc()).limit(10))
             datasets = res.scalars().all()
             if not datasets:
-                await update.message.reply_text("No data.")
+                await update.message.reply_text("No datasets found. Please upload one via the web dashboard.")
                 return
             
             cur_id = context.user_data.get("selected_dataset_id")
@@ -223,7 +269,11 @@ class TelegramBotService:
         if not context.args: return
         async with AsyncSessionLocal() as db:
             db_user = await cls._get_linked_user(db, update.effective_user.id)
-            user_id = db_user.user_id if db_user else 1
+            if not db_user:
+                await update.message.reply_text("Please link your account first using /link [code].")
+                return
+                
+            user_id = db_user.user_id
             res = await db.execute(select(Dataset).where(and_(Dataset.dataset_id == int(context.args[0]), Dataset.user_id == user_id)))
             ds = res.scalar_one_or_none()
             if ds:

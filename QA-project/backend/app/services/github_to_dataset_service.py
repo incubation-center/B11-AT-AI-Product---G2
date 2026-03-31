@@ -249,8 +249,9 @@ async def _generate_testcases_with_llm(prompt: str) -> list[dict[str, Any]]:
     We import lazily to avoid circular imports.
     """
     from app.services.embedding_service import _generate_with_retry, GENERATIVE_MODEL
-    # _generate_with_retry returns a string; we then parse JSON array.
-    output = await _generate_with_retry(GENERATIVE_MODEL, prompt)
+    # _generate_with_retry expects a list of messages.
+    messages = [{"role": "user", "content": prompt}]
+    output = await _generate_with_retry(GENERATIVE_MODEL, messages)
     parsed = _extract_json_array(output)
     # Defensive: ensure list elements are objects.
     cleaned: list[dict[str, Any]] = []
