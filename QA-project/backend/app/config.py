@@ -20,6 +20,11 @@ class Settings:
     # OpenRouter AI
     OPENROUTER_API_KEY: str = os.getenv("OPENROUTER_API_KEY", "")
 
+    # Supabase Storage (S3 Compatibility)
+    SUPABASE_URL: str = os.getenv("SUPABASE_URL", "")
+    SUPABASE_ACCESS_KEY: str = os.getenv("SUPABASE_ACCESS_KEY", "")
+    SUPABASE_SECRET_KEY: str = os.getenv("SUPABASE_SECRET_KEY", "")
+
     # CORS
     CORS_ORIGINS: list[str] = [
         "http://localhost:3000",

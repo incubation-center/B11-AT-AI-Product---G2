@@ -3,7 +3,7 @@ import logging
 from pathlib import Path
 
 from fastapi import APIRouter, Depends, HTTPException, status
-from fastapi.responses import FileResponse
+from fastapi import APIRouter, Depends, HTTPException, status, Response
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 
@@ -11,7 +11,7 @@ from app.database import get_db
 from app.models.users import User
 from app.models.datasets import Dataset
 from app.dependencies.auth import get_current_user
-from app.services.report_service import generate_report, list_reports, get_report_by_id
+from app.services.report_service import generate_report, list_reports, get_report_by_id, get_s3_client
 from app.services.log_service import log_activity
 from app.schemas.reports import (
     GenerateReportRequest,
@@ -122,10 +122,10 @@ async def download_report(
     if current_user.role != "admin" and report.user_id != current_user.user_id:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Access denied")
 
-    if not report.file_path or not os.path.isfile(report.file_path):
+    if not report.file_path:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Report file not found on disk",
+            detail="Report file path not found in database",
         )
 
     media_types = {
@@ -134,10 +134,19 @@ async def download_report(
         "excel": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
     }
     media_type = media_types.get(report.report_type, "application/octet-stream")
-    file_name = Path(report.file_path).name
+    file_name = report.file_path
 
-    return FileResponse(
-        path=report.file_path,
+    try:
+        s3 = get_s3_client()
+        # Fetch object content
+        response = s3.get_object(Bucket='reports', Key=file_name)
+        res = response['Body'].read()
+    except Exception as e:
+        logger.error(f"Failed to download from Supabase S3 Storage: {e}")
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Could not download file from storage.")
+
+    return Response(
+        content=res,
         media_type=media_type,
-        filename=file_name,
+        headers={"Content-Disposition": f'attachment; filename="{file_name}"'},
     )
