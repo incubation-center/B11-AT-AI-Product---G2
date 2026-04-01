@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useAuth } from "@/context/auth-context";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -63,10 +64,12 @@ export function Topbar({ title, description }: TopbarProps) {
               </div>
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
-            <DropdownMenuItem className="gap-2">
-              <User className="h-4 w-4" />
-              Profile
-            </DropdownMenuItem>
+            <Link href="/dashboard/profile">
+              <DropdownMenuItem className="gap-2 cursor-pointer">
+                <User className="h-4 w-4" />
+                Profile & Settings
+              </DropdownMenuItem>
+            </Link>
             <DropdownMenuSeparator />
             <DropdownMenuItem className="gap-2 text-destructive" onClick={logout}>
               <LogOut className="h-4 w-4" />

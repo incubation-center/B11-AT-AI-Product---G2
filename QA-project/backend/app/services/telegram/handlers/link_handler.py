@@ -17,9 +17,9 @@ class LinkHandler:
         text = (
             "<b>Let's get you connected!</b> 🔗\n\n"
             "1. Log in to your web dashboard.\n"
-            "2. Go to <b>Settings > Telegram Link</b>.\n"
-            "3. Copy your 6-digit connection code.\n\n"
-            "👉 <b>Now, just paste the code here in our chat!</b>"
+            "2. Open the <b>Profile & Settings</b> menu from the top-right.\n"
+            "3. Click <b>Generate Connection Code</b> in the Telegram section.\n\n"
+            "👉 <b>Now, just paste the 6-digit code here!</b>"
         )
         await query.edit_message_text(text, parse_mode="HTML", reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("🏠 Back", callback_data="main_menu")]]))
 

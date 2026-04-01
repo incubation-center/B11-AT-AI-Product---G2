@@ -50,10 +50,18 @@ class MenuHandler:
     @classmethod
     async def help_command(cls, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         help_text = (
-            "<b>How to use your QA Assistant:</b>\n\n"
-            "💬 <b>Chat:</b> Just type a question! Try: <i>'What are our most critical modules?'</i>\n\n"
-            "📊 <b>Status:</b> Use the dashboard for quick severity charts.\n\n"
-            "📂 <b>Projects:</b> Switch between different bug reports easily.\n\n"
-            "🔗 <b>Connect:</b> Paste your 6-digit code anytime to link your account."
+            "<b>Welcome to your AI QA Assistant!</b> 🤖\n\n"
+            "I'm here to help you understand your bug reports and project health. Here's a quick guide on how to interact with me:\n\n"
+            "💬 <b>Ask Anything:</b> Just type a message! I can answer complex questions like:\n"
+            "<i>- 'What are the top 3 high-priority issues?'</i>\n"
+            "<i>- 'Which developer has the most open bugs?'</i>\n\n"
+            "📊 <b>Dashboard:</b> Click <code>📊 Quick Status</code> in the main menu to see visual severity reports.\n\n"
+            "📂 <b>Projects:</b> If you have multiple bug reports, use <code>📂 Switch Project</code> to choose which one I should analyze.\n\n"
+            "🚀 <b>Getting Started:</b> If you haven't linked your account yet, just type <b>/link</b> or paste your 6-digit code!"
         )
-        await update.message.reply_html(help_text, reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("🏠 Main Menu", callback_data="main_menu")]]))
+        markup = InlineKeyboardMarkup([[InlineKeyboardButton("🏠 Main Menu", callback_data="main_menu")]])
+        
+        if update.callback_query:
+            await update.callback_query.edit_message_text(help_text, parse_mode="HTML", reply_markup=markup)
+        else:
+            await update.message.reply_html(help_text, reply_markup=markup)

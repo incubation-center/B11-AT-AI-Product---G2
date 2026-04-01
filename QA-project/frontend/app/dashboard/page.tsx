@@ -8,10 +8,10 @@ import { Topbar } from "@/components/topbar";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, Bug, AlertCircle, Clock, CheckCircle, RotateCcw, XCircle, BarChart3, BotMessageSquare, FileText } from "lucide-react";
+import { Loader2, Bug, AlertCircle, Clock, CheckCircle, RotateCcw, XCircle, BarChart3, BotMessageSquare, FileText, Send } from "lucide-react";
 import { toast } from "sonner";
 import { BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Label, Sector } from "recharts";
-import type { PieSectorShapeProps } from "recharts/types/polar/Pie";
+// import type { PieSectorShapeProps } from "recharts/types/polar/Pie";
 
 /** Theme tokens are full colors (oklch) — use var() directly, not hsl(var(...)). */
 const STATUS_COLORS: Record<string, string> = {
@@ -101,22 +101,18 @@ export default function DashboardPage() {
   const activeStatusSlice =
     activeStatusIndex >= 0 ? statusData[activeStatusIndex] : statusData[0] ?? { name: "Status", value: 0, fill: "var(--muted)" };
 
-  const renderStatusPieShape = useCallback(
-    ({ index, outerRadius = 0, ...props }: PieSectorShapeProps) => {
+  const renderStatusActiveShape = useCallback(
+    ({ outerRadius = 0, ...props }: any) => {
       const baseRadius = typeof outerRadius === "number" ? outerRadius : Number(outerRadius) || 0;
 
-      if (index === activeStatusIndex) {
-        return (
-          <g>
-            <Sector {...props} outerRadius={baseRadius + 8} />
-            <Sector {...props} outerRadius={baseRadius + 20} innerRadius={baseRadius + 10} />
-          </g>
-        );
-      }
-
-      return <Sector {...props} outerRadius={baseRadius} />;
+      return (
+        <g>
+          <Sector {...props} outerRadius={baseRadius + 8} />
+          <Sector {...props} outerRadius={baseRadius + 20} innerRadius={baseRadius + 10} />
+        </g>
+      );
     },
-    [activeStatusIndex]
+    []
   );
 
   const statCards = [
@@ -132,6 +128,7 @@ export default function DashboardPage() {
     { title: "Analytics", description: "Deep dive into metrics", href: "/dashboard/analytics", icon: BarChart3 },
     { title: "AI Chat", description: "Ask AI about defects", href: "/dashboard/ai-chat", icon: BotMessageSquare },
     { title: "Reports", description: "Generate reports", href: "/dashboard/reports", icon: FileText },
+    { title: "Telegram Bot", description: "Chat on your phone", href: "https://t.me/QAChatbot", icon: Send },
   ];
 
   if (loading) {
@@ -282,7 +279,8 @@ export default function DashboardPage() {
                           paddingAngle={2}
                           dataKey="value"
                           strokeWidth={3}
-                          shape={renderStatusPieShape}
+                          activeIndex={activeStatusIndex}
+                          activeShape={renderStatusActiveShape}
                           onMouseEnter={(_, index) => {
                             if (statusData[index]) {
                               setActiveStatus(statusData[index].name);
@@ -337,7 +335,12 @@ export default function DashboardPage() {
         {/* Quick Links */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {quickLinks.map((link) => (
-            <Link key={link.href} href={link.href}>
+            <Link 
+              key={link.href} 
+              href={link.href}
+              target={link.href.includes("t.me") ? "_blank" : undefined}
+              rel={link.href.includes("t.me") ? "noopener noreferrer" : undefined}
+            >
               <Card className="hover:bg-secondary/50 transition-colors cursor-pointer h-full">
                 <CardContent className="pt-6">
                   <div className="flex items-start gap-4">

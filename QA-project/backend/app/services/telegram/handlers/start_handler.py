@@ -33,7 +33,7 @@ class StartHandler:
                 text = (
                     f"Welcome back, {db_user.name}! 🤖\n\n"
                     f"{UIService.format_context_header(dataset)}"
-                    "What would you like to explore today? You can use the buttons below or just ask me a question!"
+                    "What would you like to explore today? You can use the buttons below, ask me a question, or check the <b>Quick Guide</b> if you need a reminder!"
                 )
 
             markup = UIService.get_active_keyboard(state, dataset)

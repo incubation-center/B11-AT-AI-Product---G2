@@ -27,6 +27,8 @@ class CallbackRouter:
         elif data == "show_upload_guide":
             # Direct reuse of instruction from LinkHandler if upload guide is similar, or create it
             await cls._handle_upload_guide(query)
+        elif data == "show_help":
+            await MenuHandler.help_command(update, context)
         elif data == "help_menu":
             await MenuHandler.help_command(update, context)
         elif data == "ai_suggestion": # Legacy support

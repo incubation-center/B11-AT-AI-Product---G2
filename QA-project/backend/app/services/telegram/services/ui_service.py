@@ -19,8 +19,9 @@ class UIService:
                  InlineKeyboardButton("📂 Switch Project", callback_data="list_datasets")],
                 [InlineKeyboardButton("🔴 High Priority", callback_data="ai_query_high_priority"),
                  InlineKeyboardButton("📅 Weekly Summary", callback_data="ai_query_weekly")],
-                [InlineKeyboardButton("⚠️ Risk Report", callback_data="ai_query_risk")],
-                [InlineKeyboardButton("💡 Explain Trends", callback_data="ai_query_trends")]
+                [InlineKeyboardButton("⚠️ Risk Report", callback_data="ai_query_risk"),
+                 InlineKeyboardButton("💡 Explain Trends", callback_data="ai_query_trends")],
+                [InlineKeyboardButton("❓ Quick Guide", callback_data="show_help")]
             ]
 
         keyboard.append([InlineKeyboardButton("🏠 Main Menu", callback_data="main_menu")])
