@@ -1,35 +1,83 @@
-# frontend-template
+# 🖥️ QA Defect Analytics - Frontend
 
-This is a [Next.js](https://nextjs.org) project bootstrapped with [v0](https://v0.app).
+[![Framework](https://img.shields.io/badge/Next.js-15-black?logo=next.js)](https://nextjs.org/)
+[![UI](https://img.shields.io/badge/UI-Shadcn-black?logo=shadcnui)](https://ui.shadcn.com/)
+[![Styling](https://img.shields.io/badge/CSS-Tailwind-38B2AC?logo=tailwindcss)](https://tailwindcss.com/)
+[![Typescript](https://img.shields.io/badge/Language-TypeScript-3178C6?logo=typescript)](https://www.typescriptlang.org/)
 
-## Built with v0
+The frontend dashboard for the QA Defect Analytics platform, built with **Next.js 15**, providing a high-performance, responsive, and visually stunning interface for managing QA workflows and AI-driven insights.
 
-This repository is linked to a [v0](https://v0.app) project. You can continue developing by visiting the link below -- start new chats to make changes, and v0 will push commits directly to this repo. Every merge to `main` will automatically deploy.
+---
 
-[Continue working on v0 →](https://v0.app/chat/projects/prj_0Ht1CmQZj0TydNDcqI05qcEjzbhu)
+## 🚀 Getting Started
 
-## Getting Started
+### Prerequisites
+- Node.js (v18+)
+- npm / yarn / pnpm
 
-First, run the development server:
+### Installation
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
+1.  **Navigate to directory**:
+    ```bash
+    cd QA-project/frontend
+    ```
+
+2.  **Install dependencies**:
+    ```bash
+    npm install
+    ```
+
+3.  **Run Development Server**:
+    ```bash
+    npm run dev
+    ```
+
+4.  Open [http://localhost:3000](http://localhost:3000) to view the application.
+
+---
+
+## 🏗️ Key Modules
+
+-   **Dashboard**: Overview of key metrics, charts, and system status.
+-   **Applications**: Robust workflow for submitting, reviewing, and authorizing QA-related tasks.
+-   **User Portal**: Profile management and Telegram account linking.
+-   **Analytics**: In-depth reporting and AI-powered defect categorization.
+
+---
+
+## 🎨 UI Architecture
+
+-   **Routing**: Next.js App Router for server-side rendering and static generation.
+-   **State Management**: React Context & Hooks.
+-   **Components**: Custom atomic components built on top of **Shadcn UI** and **Radix UI**.
+-   **Charts**: Dynamic data visualization using **Recharts**.
+-   **Theming**: Full support for dark and light modes with **next-themes**.
+
+---
+
+## 📂 Directory Structure
+
+```text
+frontend/
+├── app/                  # Next.js App Router pages
+│   ├── dashboard/        # Dashboard views
+│   ├── applications/     # Workflow management
+│   └── (auth)/           # Authentication layout
+├── components/           # Reusable UI components
+│   ├── ui/               # Shadcn UI primitives
+│   ├── business/         # Domain-specific components
+│   └── shared/           # Common components
+├── context/              # Global state providers
+├── hooks/                # Custom React hooks
+├── lib/                  # Utility functions and API clients
+└── public/               # Static assets
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+---
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## 🧼 Code Quality & Standards
 
-## Learn More
-
-To learn more, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-- [v0 Documentation](https://v0.app/docs) - learn about v0 and how to use it.
-
-<a href="https://v0.app/chat/api/kiro/clone/SethThavareakHour/frontend-template" alt="Open in Kiro"><img src="https://pdgvvgmkdvyeydso.public.blob.vercel-storage.com/open%20in%20kiro.svg?sanitize=true" /></a>
+-   **TypeScript**: Strict typing for enhanced developer experience and stability.
+-   **ESLint**: Enforced coding standards for consistency.
+-   **Tailwind CSS**: Utility-first CSS for rapid, maintainable styling.
+-   **Accessibility**: ARIA-compliant components via Radix UI.
