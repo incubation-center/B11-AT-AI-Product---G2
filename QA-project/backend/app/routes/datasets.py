@@ -15,7 +15,7 @@ from app.services.log_service import log_activity
 
 router = APIRouter(prefix="/datasets", tags=["Datasets"])
 
-ALLOWED_EXTENSIONS = {".csv", ".xlsx", ".xls"}
+ALLOWED_EXTENSIONS = {".csv", ".xlsx", ".xls", ".pdf", ".docx", ".doc"}
 
 
 # ─── Upload dataset ─────────────────────────────────────────────────
@@ -44,9 +44,9 @@ async def upload_dataset(
     if len(file_bytes) == 0:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Uploaded file is empty")
 
-    # 10 MB max
-    if len(file_bytes) > 10 * 1024 * 1024:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="File too large (max 10 MB)")
+    # 50 MB max
+    if len(file_bytes) > 50 * 1024 * 1024:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="File too large (max 50 MB)")
 
     try:
         dataset, defect_count = await parse_and_import(

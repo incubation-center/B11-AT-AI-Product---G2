@@ -61,10 +61,10 @@ export default function DatasetsPage() {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    const validTypes = [".csv", ".xlsx", ".xls"];
+    const validTypes = [".csv", ".xlsx", ".xls", ".pdf", ".docx", ".doc"];
     const extension = file.name.toLowerCase().slice(file.name.lastIndexOf("."));
     if (!validTypes.includes(extension)) {
-      toast.error("Please upload a CSV or Excel file");
+      toast.error("Please upload a CSV, Excel, PDF, or Word document");
       return;
     }
 
@@ -174,7 +174,7 @@ export default function DatasetsPage() {
           <CardHeader>
             <CardTitle className="text-base">Upload Testcase Document</CardTitle>
             <CardDescription>
-              Upload a CSV or Excel file containing defect data (max 50MB)
+              Upload a CSV, Excel, PDF, or Word document containing testcase data (max 50MB)
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -200,7 +200,7 @@ export default function DatasetsPage() {
                 <Input
                   ref={fileInputRef}
                   type="file"
-                  accept=".csv,.xlsx,.xls"
+                  accept=".csv,.xlsx,.xls,.pdf,.docx,.doc"
                   onChange={handleUpload}
                   disabled={uploading}
                   className="w-64"
@@ -271,7 +271,7 @@ export default function DatasetsPage() {
                 <FileSpreadsheet className="h-12 w-12 text-muted-foreground mb-4" />
                 <h3 className="text-lg font-medium text-foreground">No testcase documents yet</h3>
                 <p className="text-sm text-muted-foreground mt-1">
-                  Upload a CSV or Excel file to get started
+                  Upload a CSV, Excel, PDF, or Word document to get started
                 </p>
               </div>
             ) : (
