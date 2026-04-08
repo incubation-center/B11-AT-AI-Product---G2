@@ -11,8 +11,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 COPY requirements.txt .
 # Install torch CPU version first to prevent downloading massive CUDA binaries (~2GB+ space/time savings)
+# NOTE: We set PYTHONPATH in the second command so pip recognizes the torch we just installed in /install!
 RUN pip install --no-cache-dir torch --index-url https://download.pytorch.org/whl/cpu --prefix=/install \
-    && pip install --no-cache-dir --prefix=/install -r requirements.txt
+    && PYTHONPATH=/install/lib/python3.11/site-packages pip install --no-cache-dir --prefix=/install -r requirements.txt
 
 
 # ── Stage 2: Runtime ──────────────────────────────────────────────
