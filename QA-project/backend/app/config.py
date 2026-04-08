@@ -25,13 +25,16 @@ class Settings:
     SUPABASE_ACCESS_KEY: str = os.getenv("SUPABASE_ACCESS_KEY", "")
     SUPABASE_SECRET_KEY: str = os.getenv("SUPABASE_SECRET_KEY", "")
 
-    # CORS
+    # CORS — extend with EXTRA_CORS_ORIGINS env var (comma-separated)
+    _extra = os.getenv("EXTRA_CORS_ORIGINS", "")
     CORS_ORIGINS: list[str] = [
         "http://localhost:3000",
         "http://localhost:3001",
         "http://127.0.0.1:3000",
         "http://127.0.0.1:3001",
-    ]
+        "https://qa-project-one.vercel.app",
+        "https://qa-project-n7gd0bd8i-seththavareakhours-projects.vercel.app",
+    ] + [o.strip() for o in _extra.split(",") if o.strip()]
 
     # JWT
     SECRET_KEY: str = os.getenv("SECRET_KEY", "change-me-in-production")
