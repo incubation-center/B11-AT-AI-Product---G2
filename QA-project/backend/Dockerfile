@@ -10,7 +10,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
 COPY requirements.txt .
-RUN pip install --no-cache-dir --prefix=/install -r requirements.txt
+# Install torch CPU version first to prevent downloading massive CUDA binaries (~2GB+ space/time savings)
+RUN pip install --no-cache-dir torch --index-url https://download.pytorch.org/whl/cpu --prefix=/install \
+    && pip install --no-cache-dir --prefix=/install -r requirements.txt
 
 
 # ── Stage 2: Runtime ──────────────────────────────────────────────
