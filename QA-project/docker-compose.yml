@@ -9,7 +9,7 @@ services:
     container_name: qa-backend
     restart: unless-stopped
     ports:
-      - "${BACKEND_PORT:-8000}:8000"
+      - "${BACKEND_PORT:-8001}:8000"
     environment:
       # Database
       - DATABASE_URL=${DATABASE_URL}
@@ -52,7 +52,7 @@ services:
     container_name: qa-frontend
     restart: unless-stopped
     ports:
-      - "${FRONTEND_PORT:-3000}:3000"
+      - "${FRONTEND_PORT:-3001}:3000"
     depends_on:
       backend:
         condition: service_healthy
