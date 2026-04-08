@@ -11,12 +11,11 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 COPY requirements.txt .
 
-# Install CPU-only PyTorch first (much smaller than full PyTorch with CUDA)
-RUN pip install --no-cache-dir --prefix=/install \
-    torch --index-url https://download.pytorch.org/whl/cpu
+# Install CPU-only PyTorch first
+RUN pip install --no-cache-dir --prefix=/install torch --index-url https://download.pytorch.org/whl/cpu
 
-# Install remaining dependencies
-RUN pip install --no-cache-dir --prefix=/install -r requirements.txt
+# Install remaining dependencies passing the CPU-only registry explicitly so it doesn't try to upgrade torch to GPU
+RUN pip install --no-cache-dir --prefix=/install -r requirements.txt --extra-index-url https://download.pytorch.org/whl/cpu
 
 
 # ── Stage 2: Runtime ──────────────────────────────────────────────
