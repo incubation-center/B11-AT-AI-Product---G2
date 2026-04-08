@@ -8,7 +8,7 @@ import { ThemeToggle } from "@/components/theme-toggle";
  */
 export function FloatingThemeToggle() {
   const pathname = usePathname();
-  if (pathname?.startsWith("/dashboard")) {
+  if (pathname === "/" || pathname?.startsWith("/dashboard")) {
     return null;
   }
   return (

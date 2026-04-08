@@ -29,7 +29,7 @@ import type {
 } from "./types";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
-const PUBLIC_PATHS = ["/login", "/register", "/verify-otp", "/forgot-password", "/reset-password"];
+const PUBLIC_PATHS = ["/", "/login", "/register", "/verify-otp", "/forgot-password", "/reset-password"];
 
 function getCookie(name: string): string | null {
   if (typeof document === "undefined") return null;
@@ -91,7 +91,7 @@ async function request<T>(
       !PUBLIC_PATHS.some((path) => window.location.pathname.startsWith(path));
 
     if (shouldRedirect) {
-      window.location.replace("/login");
+      window.location.replace("/");
     }
 
     throw new ApiError("Unauthorized", 401);
@@ -307,7 +307,7 @@ export const reports = {
     if (response.status === 401) {
       deleteCookie("user");
       if (typeof window !== "undefined") {
-        window.location.href = "/login";
+        window.location.href = "/";
       }
       throw new ApiError("Unauthorized", 401);
     }

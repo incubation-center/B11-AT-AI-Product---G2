@@ -16,7 +16,7 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-const publicPaths = ["/login", "/register", "/verify-otp", "/forgot-password", "/reset-password"];
+const publicPaths = ["/", "/login", "/register", "/verify-otp", "/forgot-password", "/reset-password"];
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
@@ -50,7 +50,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setToken(null);
         setUser(null);
         if (!isPublicPath) {
-          router.push("/login");
+          router.push("/");
         }
       }
 
@@ -84,7 +84,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setUser(null);
     setToken(null);
     deleteCookie("user");
-    router.push("/login");
+    router.push("/");
   }, [router]);
 
   const setAuth = useCallback((userData: User) => {
