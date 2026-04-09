@@ -28,7 +28,7 @@ def _set_auth_cookie(response: Response, access_token: str) -> None:
         value=access_token,
         httponly=True,
         secure=settings.COOKIE_SECURE,
-        samesite="lax",
+        samesite=settings.COOKIE_SAMESITE,
         max_age=settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60,
         path="/",
     )
@@ -219,5 +219,10 @@ async def get_me(current_user: User = Depends(get_current_user)):
 @router.post("/logout", response_model=MessageResponse)
 async def logout(response: Response):
     """Clear the auth session cookie."""
-    response.delete_cookie(settings.AUTH_COOKIE_NAME, path="/")
+    response.delete_cookie(
+        settings.AUTH_COOKIE_NAME, 
+        path="/",
+        secure=settings.COOKIE_SECURE,
+        samesite=settings.COOKIE_SAMESITE,
+    )
     return MessageResponse(message="Logged out successfully")

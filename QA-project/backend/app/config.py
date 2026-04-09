@@ -42,6 +42,7 @@ class Settings:
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60
     AUTH_COOKIE_NAME: str = os.getenv("AUTH_COOKIE_NAME", "access_token")
     COOKIE_SECURE: bool = os.getenv("COOKIE_SECURE", "false").lower() == "true"
+    COOKIE_SAMESITE: str = os.getenv("COOKIE_SAMESITE", "lax")
 
     # Email / SMTP
     SMTP_HOST: str = os.getenv("SMTP_HOST", "smtp.gmail.com")
