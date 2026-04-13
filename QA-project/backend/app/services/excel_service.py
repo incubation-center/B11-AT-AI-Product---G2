@@ -10,7 +10,7 @@ def create_test_case_excel(test_cases: list[dict]) -> io.BytesIO:
     df = pd.DataFrame(test_cases)
     
     # Define columns to ensure order even if AI misses some or adds others
-    columns = ["ID", "Module", "Title", "Pre-conditions", "Test Steps", "Expected Result", "Priority"]
+    columns = ["ID", "Type", "Module", "Title", "Pre-conditions", "Test Steps", "Test Data", "Expected Result", "Post-conditions", "Priority"]
     # Reindex and handle missing columns
     df = df.reindex(columns=columns).fillna("-")
 
@@ -44,17 +44,22 @@ def create_test_case_excel(test_cases: list[dict]) -> io.BytesIO:
         # Adjust column widths & cell alignment
         column_widths = {
             "ID": 10,
+            "Type": 12,
             "Module": 15,
             "Title": 30,
             "Pre-conditions": 35,
             "Test Steps": 45,
+            "Test Data": 25,
             "Expected Result": 35,
+            "Post-conditions": 30,
             "Priority": 12
         }
 
         for i, col in enumerate(columns):
             width = column_widths.get(col, 20)
-            worksheet.column_dimensions[chr(65 + i)].width = width
+            # Use column index to avoid chr(65+i) issues if columns > 26 (though we are at 10)
+            col_letter = worksheet.cell(row=1, column=i+1).column_letter
+            worksheet.column_dimensions[col_letter].width = width
             
             # Add alternating row colors and wrap text for data rows
             for row in range(2, len(df) + 2):

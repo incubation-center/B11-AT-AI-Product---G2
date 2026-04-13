@@ -77,6 +77,11 @@ class AIHandler:
                     parse_mode="HTML"
                 )
                 await loading_msg.delete()
+            except ValueError as ve:
+                logger.warning(f"Excel generation check: {ve}")
+                text_msg = "⚡ <b>I need to prepare your data before I can generate test cases.</b> Do you want me to do it now?"
+                markup = InlineKeyboardMarkup([[InlineKeyboardButton("⚡ Prepare Data Now", callback_data=f"index_ds_{dataset.dataset_id}")]])
+                await loading_msg.edit_text(text_msg, reply_markup=markup)
             except Exception as e:
                 logger.error(f"Excel generation error: {e}")
                 await loading_msg.edit_text("😕 Something went wrong while generating the Excel file.")

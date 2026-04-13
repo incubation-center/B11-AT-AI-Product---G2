@@ -21,3 +21,5 @@ openpyxl
 boto3
 reportlab
 python-telegram-bot
+pymupdf
+python-docx
