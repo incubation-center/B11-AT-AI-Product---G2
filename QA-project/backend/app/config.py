@@ -25,13 +25,16 @@ class Settings:
     SUPABASE_ACCESS_KEY: str = os.getenv("SUPABASE_ACCESS_KEY", "")
     SUPABASE_SECRET_KEY: str = os.getenv("SUPABASE_SECRET_KEY", "")
 
-    # CORS
+    # CORS — extend with EXTRA_CORS_ORIGINS env var (comma-separated)
+    _extra = os.getenv("EXTRA_CORS_ORIGINS", "")
     CORS_ORIGINS: list[str] = [
         "http://localhost:3000",
         "http://localhost:3001",
         "http://127.0.0.1:3000",
         "http://127.0.0.1:3001",
-    ]
+        "https://qa-project-one.vercel.app",
+        "https://qa-project-n7gd0bd8i-seththavareakhours-projects.vercel.app",
+    ] + [o.strip() for o in _extra.split(",") if o.strip()]
 
     # JWT
     SECRET_KEY: str = os.getenv("SECRET_KEY", "change-me-in-production")
@@ -39,6 +42,7 @@ class Settings:
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60
     AUTH_COOKIE_NAME: str = os.getenv("AUTH_COOKIE_NAME", "access_token")
     COOKIE_SECURE: bool = os.getenv("COOKIE_SECURE", "false").lower() == "true"
+    COOKIE_SAMESITE: str = os.getenv("COOKIE_SAMESITE", "lax")
 
     # Email / SMTP
     SMTP_HOST: str = os.getenv("SMTP_HOST", "smtp.gmail.com")
