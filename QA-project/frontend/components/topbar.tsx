@@ -12,7 +12,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { LogOut } from "lucide-react";
+import { LogOut, User } from "lucide-react";
 import { ThemeToggle } from "@/components/theme-toggle";
 
 interface TopbarProps {
