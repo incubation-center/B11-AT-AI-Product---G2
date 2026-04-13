@@ -205,8 +205,6 @@ def _extract_json_array(text: str) -> list[Any]:
 def _build_generation_prompt(repo_owner: str, repo_name: str, files: list[tuple[str, str]], max_defects: int) -> str:
     file_blocks = []
     for rel_path, content in files:
-        # Keep prompt compact by truncating each file content.
-        # Content is already limited by _read_text_limited, but we also add a safety cap.
         cap = 20_000
         truncated = content[:cap]
         file_blocks.append(f"--- FILE: {rel_path} ---\n{truncated}\n--- END FILE ---")
@@ -219,23 +217,27 @@ def _build_generation_prompt(repo_owner: str, repo_name: str, files: list[tuple[
         f"Repository: {repo_owner}/{repo_name}\n"
         f"Generate at most {max_defects} test cases.\n\n"
         "Each JSON object MUST have these keys (proper QA test case format):\n"
-        "- title (string, required): Brief name of the test case (e.g., 'Verify user login with valid credentials')\n"
-        "- module (string|null): Software component/feature being tested\n"
-        "- severity (string|null): one of Critical, High, Medium, Low\n"
-        "- priority (string|null): one of P1, P2, P3, P4\n"
-        "- environment (string|null): Where test runs (e.g., staging, production)\n"
-        "- status (string|null): Test status (e.g., Open, Automated)\n"
-        "- preconditions (string|null): Setup needed before test (e.g., 'User must be logged out', 'DB must be reset')\n"
-        "- test_steps (string|null): Step-by-step instructions (numbered, clear actions). Example: '1. Open login page\\n2. Enter username\\n3. Click Submit'\n"
-        "- expected_result (string|null): What should happen after each step (e.g., 'User logged in successfully', 'Redirect to home page')\n"
-        "- bug_id (string|null): Reference ID if applicable\n\n"
-        "IMPORTANT RULES FOR QA DOCUMENTATION:\n"
-        "- title MUST be action-oriented and describe what is being tested (NOT developer notes)\n"
-        "- test_steps MUST be numbered, detailed, and executable by QA without code knowledge\n"
-        "- expected_result MUST describe observable outcomes (what user/tester should see)\n"
-        "- preconditions MUST specify environment/data setup needed\n"
-        "- Write in QA/tester language, NOT developer language\n"
-        "- Each test case should be independent and focused on ONE feature\n"
+        "- bug_id (string, REQUIRED): Sequential Test Case ID in the format TC-001, TC-002, … etc.\n"
+        "  Never null — always generate a sequential ID if there is no existing one in the code.\n"
+        "- title (string, required): Brief action-oriented name (e.g., 'Verify user login with valid credentials')\n"
+        "- module (string|null): Software component/feature being tested. Infer from file path / class / function name.\n"
+        "- severity (string|null): one of Critical, High, Medium, Low. Infer from context (auth → High, UI typo → Low).\n"
+        "- priority (string|null): one of P1, P2, P3, P4. Infer from severity if not stated.\n"
+        "- environment (string|null): Where test runs (e.g., staging, production, UAT). Use 'staging' as default.\n"
+        "- status (string|null): Test status — use 'Open' by default unless a test is clearly automated.\n"
+        "- preconditions (string|null): Setup needed before test. Infer from imports, fixtures, or describe blocks.\n"
+        "- test_steps (string|null): Numbered step-by-step instructions executable by a QA tester without code knowledge.\n"
+        "  Example: '1. Open the login page\\n2. Enter valid username and password\\n3. Click the Login button'\n"
+        "- expected_result (string|null): Observable outcome. Example: 'User is redirected to the dashboard'\n\n"
+        "IMPORTANT RULES:\n"
+        "- bug_id is REQUIRED on every test case — always generate TC-001, TC-002, … sequentially.\n"
+        "- title MUST be action-oriented and describe what is being tested (NOT developer notes).\n"
+        "- test_steps MUST be numbered, detailed, and executable by QA without code knowledge.\n"
+        "- expected_result MUST describe observable outcomes (what the tester should see/verify).\n"
+        "- preconditions MUST specify environment/data setup needed.\n"
+        "- Infer missing fields from context — only use null when you truly cannot determine the value.\n"
+        "- Write in QA/tester language, NOT developer language.\n"
+        "- Each test case should be independent and focused on ONE feature.\n"
         "- Return an array of objects.\n\n"
         "=== REPOSITORY FILES (TRUNCATED) ===\n"
         f"{files_text}\n"
@@ -377,16 +379,19 @@ async def generate_dataset_from_github(
                 return v2 if v2 else None
             return None
 
+        # Always provide a bug_id — fall back to sequential TC-NNN
+        resolved_bug_id = _opt_str(bug_id) or f"TC-{created + 1:03d}"
+
         db.add(
             Defect(
                 dataset_id=dataset.dataset_id,
-                bug_id=_opt_str(bug_id),
+                bug_id=resolved_bug_id,
                 title=title.strip(),
                 module=_opt_str(module),
                 severity=_opt_str(severity),
                 priority=_opt_str(priority),
                 environment=_opt_str(environment),
-                status=_opt_str(status),
+                status=_opt_str(status) or "Open",
                 test_steps=_opt_str(test_steps),
                 expected_result=_opt_str(expected_result),
                 preconditions=_opt_str(preconditions),

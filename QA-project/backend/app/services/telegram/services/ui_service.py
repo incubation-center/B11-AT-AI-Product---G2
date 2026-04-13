@@ -17,6 +17,8 @@ class UIService:
             keyboard = [
                 [InlineKeyboardButton("📊 Quick Status", callback_data="status_dashboard"), 
                  InlineKeyboardButton("📂 Switch Project", callback_data="list_datasets")],
+                [InlineKeyboardButton("💬 Ask a Question", callback_data="ask_question_help")],
+                [InlineKeyboardButton("📝 Generate QA Test Cases (Excel)", callback_data="generate_test_cases_excel")],
                 [InlineKeyboardButton("🔴 High Priority", callback_data="ai_query_high_priority"),
                  InlineKeyboardButton("📅 Weekly Summary", callback_data="ai_query_weekly")],
                 [InlineKeyboardButton("⚠️ Risk Report", callback_data="ai_query_risk"),

@@ -39,6 +39,10 @@ class CallbackRouter:
             await DatasetHandler.handle_index_action(update, context, int(data.split("_")[-1]))
         elif data.startswith("select_ds_"):
             await DatasetHandler.handle_select_action(update, context, int(data.split("_")[-1]))
+        elif data == "ask_question_help":
+            await AIHandler.handle_ask_question_help(update, context)
+        elif data == "generate_test_cases_excel":
+            await AIHandler.handle_generate_test_cases_excel(update, context)
 
     @classmethod
     async def _handle_upload_guide(cls, query):

@@ -7,6 +7,7 @@ Generation: OpenRouter API (OpenAI-compatible) with google/gemini-2.0-flash-001
 
 import asyncio
 import logging
+import json
 from typing import Optional
 
 from openai import AsyncOpenAI
@@ -162,3 +163,51 @@ async def generate_qa_suggestions(context: str, dataset_name: str = "") -> str:
     )
 
     return await _generate_with_retry(GENERATIVE_MODEL, [{"role": "user", "content": prompt}])
+
+
+async def generate_test_cases_json(context: str, dataset_name: str = "") -> list[dict]:
+    """
+    Generate professional QA test cases as JSON.
+    """
+    if not settings.OPENROUTER_API_KEY:
+        raise ValueError("OPENROUTER_API_KEY is not configured")
+
+    system_prompt = (
+        "You are a Senior QA Architect. Your goal is to generate high-quality, professional test cases "
+        "based on the provided defect data.\n\n"
+        "Guidelines:\n"
+        "- Ensure each test case is atomic, repeatable, and realistic.\n"
+        "- Use the imperative mood (e.g., 'Click', 'Verify', 'Navigate').\n"
+        "- Formulate test cases that would prevent similar defects in the future.\n"
+        "- Stick to professional testing terminology.\n\n"
+        "Output ONLY a valid JSON list of dictionaries with exactly these keys:\n"
+        "- ID: A unique identifier (e.g., TC-001)\n"
+        "- Module: The application module being tested\n"
+        "- Title: A concise descriptive title\n"
+        "- Pre-conditions: Any state required before starting\n"
+        "- Test Steps: Numbered actionable steps\n"
+        "- Expected Result: Clear outcome for success\n"
+        "- Priority: High, Medium, or Low"
+    )
+
+    prompt = (
+        f"Dataset: {dataset_name}\n\n"
+        f"=== DEFECT DATA ===\n{context}\n=== END DATA ===\n\n"
+        "Generate 10 relevant test cases based on this data."
+    )
+
+    try:
+        resp = await _generate_with_retry(GENERATIVE_MODEL, [
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": prompt}
+        ])
+        
+        # Extract JSON if wrapped in code blocks
+        s = resp.find("[")
+        e = resp.rfind("]")
+        if s != -1 and e != -1:
+            return json.loads(resp[s:e+1])
+        return []
+    except Exception as e:
+        logger.error(f"Failed to generate test cases JSON: {e}")
+        return []

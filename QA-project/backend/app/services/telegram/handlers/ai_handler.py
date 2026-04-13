@@ -3,7 +3,8 @@ import re
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import ContextTypes
 from app.database import AsyncSessionLocal
-from app.services.rag_service import ask_question
+from app.services.rag_service import ask_question, get_test_cases
+from app.services.excel_service import create_test_case_excel
 from app.services.telegram.services.state_service import StateService
 from app.services.telegram.services.ui_service import UIService
 
@@ -20,6 +21,65 @@ class AIHandler:
         }
         prompt = prompts.get(query_type, "Summarize the project status.")
         await cls.perform_ai_response(update, context, prompt)
+
+    @classmethod
+    async def handle_ask_question_help(cls, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        """Instructs the user on how to ask custom questions."""
+        query = update.callback_query
+        await query.answer()
+        
+        async with AsyncSessionLocal() as db:
+            ctx = await StateService.get_user_context(db, update.effective_user.id, context)
+            header = UIService.format_context_header(ctx.get("dataset"))
+            
+        text = (
+            f"{header}"
+            "💬 <b>Ask me anything!</b>\n\n"
+            "You can type any question about your project directly in the chat. For example:\n"
+            "• <i>'Which module has the most critical bugs?'</i>\n"
+            "• <i>'What is the resolution rate for the Auth module?'</i>\n"
+            "• <i>'Summarize all bugs related to the database.'</i>\n\n"
+            "I will analyze your dataset and provide a data-driven answer."
+        )
+        await query.message.reply_html(text, reply_markup=UIService.get_active_keyboard("ready", ctx.get("dataset")))
+
+    @classmethod
+    async def handle_generate_test_cases_excel(cls, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        """Generates QA test cases and sends as an Excel document."""
+        query = update.callback_query
+        await query.answer("Generating Excel file... This may take a few seconds.")
+        
+        loading_msg = await query.message.reply_html("⏳ <b>Generating QA Test Cases...</b>\n<i>I'm analyzing your defect data to build professional test scenarios.</i>")
+        await query.message.reply_chat_action("upload_document")
+
+        async with AsyncSessionLocal() as db:
+            ctx = await StateService.get_user_context(db, update.effective_user.id, context)
+            if ctx["state"] != "ready":
+                await loading_msg.edit_text("😕 I need a project with data to generate test cases.")
+                return
+            
+            dataset = ctx["dataset"]
+            try:
+                result = await get_test_cases(db, dataset.dataset_id)
+                test_cases = result.get("test_cases", [])
+                
+                if not test_cases:
+                    await loading_msg.edit_text("😕 I couldn't generate any test cases from this dataset.")
+                    return
+                
+                excel_file = create_test_case_excel(test_cases)
+                file_name = f"QA_TestCases_{dataset.file_name.split('.')[0]}.xlsx"
+                
+                await query.message.reply_document(
+                    document=excel_file,
+                    filename=file_name,
+                    caption=f"✅ <b>QA Test Cases Generated</b>\nProject: <code>{dataset.file_name}</code>\nGenerated 10 scenarios based on your defect data.",
+                    parse_mode="HTML"
+                )
+                await loading_msg.delete()
+            except Exception as e:
+                logger.error(f"Excel generation error: {e}")
+                await loading_msg.edit_text("😕 Something went wrong while generating the Excel file.")
 
     @classmethod
     async def perform_ai_response(cls, update: Update, context: ContextTypes.DEFAULT_TYPE, text: str):
