@@ -104,6 +104,7 @@ async def ask_question_endpoint(
         answer=result["answer"],
         sources=result["sources"],
         dataset_name=result.get("dataset_name"),
+        quality=result.get("quality"),
     )
 
 
