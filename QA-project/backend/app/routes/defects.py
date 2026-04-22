@@ -6,22 +6,11 @@ from typing import Optional
 from app.database import get_db
 from app.models.users import User
 from app.models.defects import Defect
-from app.models.datasets import Dataset
 from app.dependencies.auth import get_current_user
+from app.dependencies.authorization import check_dataset_access
 from app.schemas.defects import DefectResponse, DefectListResponse, DefectCreate, DefectUpdate
 
 router = APIRouter(prefix="/defects", tags=["Defects"])
-
-
-async def _check_dataset_access(db: AsyncSession, dataset_id: int, user: User) -> Dataset:
-    """Verify the dataset exists and the user has access."""
-    result = await db.execute(select(Dataset).where(Dataset.dataset_id == dataset_id))
-    dataset = result.scalar_one_or_none()
-    if not dataset:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Dataset not found")
-    if user.role != "admin" and dataset.user_id != user.user_id:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Access denied")
-    return dataset
 
 
 # ─── List defects (with filter + pagination) ─────────────────────────
@@ -40,7 +29,7 @@ async def list_defects(
     current_user: User = Depends(get_current_user),
 ):
     """List defects for a given dataset with optional filtering and pagination."""
-    await _check_dataset_access(db, dataset_id, current_user)
+    await check_dataset_access(db, dataset_id, current_user)
 
     query = select(Defect).where(Defect.dataset_id == dataset_id)
     count_query = select(func.count(Defect.defect_id)).where(Defect.dataset_id == dataset_id)
@@ -93,7 +82,7 @@ async def get_defect(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Defect not found")
 
     # Check dataset access
-    await _check_dataset_access(db, defect.dataset_id, current_user)
+    await check_dataset_access(db, defect.dataset_id, current_user)
 
     return DefectResponse.model_validate(defect)
 
@@ -107,7 +96,7 @@ async def create_defect(
     current_user: User = Depends(get_current_user),
 ):
     """Manually create a defect within a dataset."""
-    await _check_dataset_access(db, body.dataset_id, current_user)
+    await check_dataset_access(db, body.dataset_id, current_user)
 
     defect = Defect(**body.model_dump())
     db.add(defect)
@@ -131,7 +120,7 @@ async def update_defect(
     if not defect:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Defect not found")
 
-    await _check_dataset_access(db, defect.dataset_id, current_user)
+    await check_dataset_access(db, defect.dataset_id, current_user)
 
     update_data = body.model_dump(exclude_unset=True)
     for field, value in update_data.items():
@@ -156,7 +145,7 @@ async def delete_defect(
     if not defect:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Defect not found")
 
-    await _check_dataset_access(db, defect.dataset_id, current_user)
+    await check_dataset_access(db, defect.dataset_id, current_user)
 
     await db.delete(defect)
     await db.flush()

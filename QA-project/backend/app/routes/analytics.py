@@ -1,11 +1,11 @@
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
+
 
 from app.database import get_db
 from app.models.users import User
-from app.models.datasets import Dataset
 from app.dependencies.auth import get_current_user
+from app.dependencies.authorization import check_dataset_access
 from app.services.lifecycle_service import (
     compute_lifecycle_for_dataset,
     get_lifecycle_summary,
@@ -44,17 +44,6 @@ from app.schemas.analytics import (
 router = APIRouter(prefix="/analytics", tags=["Analytics"])
 
 
-async def _check_dataset_access(db: AsyncSession, dataset_id: int, user: User) -> Dataset:
-    """Verify dataset exists and user has access."""
-    result = await db.execute(select(Dataset).where(Dataset.dataset_id == dataset_id))
-    dataset = result.scalar_one_or_none()
-    if not dataset:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Dataset not found")
-    if user.role != "admin" and dataset.user_id != user.user_id:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Access denied")
-    return dataset
-
-
 # ─── Compute all analytics for a dataset ─────────────────────────────
 
 @router.post("/compute/{dataset_id}", response_model=ComputeAnalyticsResponse)
@@ -69,7 +58,7 @@ async def compute_dataset_analytics(
       2. Aggregate analytics (reopen rate, avg resolution, leakage rate)
       3. Module risk scores
     """
-    await _check_dataset_access(db, dataset_id, current_user)
+    await check_dataset_access(db, dataset_id, current_user)
 
     # Step 1: Lifecycle
     lifecycle_count = await compute_lifecycle_for_dataset(db, dataset_id)
@@ -102,7 +91,7 @@ async def get_defect_summary(
     current_user: User = Depends(get_current_user),
 ):
     """Show total bugs, open, closed, reopened (main dashboard card)."""
-    await _check_dataset_access(db, dataset_id, current_user)
+    await check_dataset_access(db, dataset_id, current_user)
     data = await get_summary(db, dataset_id)
     return DefectSummaryResponse(**data)
 
@@ -116,7 +105,7 @@ async def get_severity_dist(
     current_user: User = Depends(get_current_user),
 ):
     """Show bug count by severity (pie or bar chart data)."""
-    await _check_dataset_access(db, dataset_id, current_user)
+    await check_dataset_access(db, dataset_id, current_user)
     dist = await get_severity_distribution(db, dataset_id)
     total = sum(item["count"] for item in dist)
     return SeverityDistributionResponse(
@@ -135,7 +124,7 @@ async def get_resolution_time(
     current_user: User = Depends(get_current_user),
 ):
     """Show average bug fix time (based on lifecycle data)."""
-    await _check_dataset_access(db, dataset_id, current_user)
+    await check_dataset_access(db, dataset_id, current_user)
     data = await get_resolution_time_stats(db, dataset_id)
     return ResolutionTimeResponse(**data)
 
@@ -149,7 +138,7 @@ async def get_reopen_rate_endpoint(
     current_user: User = Depends(get_current_user),
 ):
     """Show percentage of reopened bugs (quality indicator)."""
-    await _check_dataset_access(db, dataset_id, current_user)
+    await check_dataset_access(db, dataset_id, current_user)
     data = await get_reopen_rate(db, dataset_id)
     return ReopenRateResponse(**data)
 
@@ -163,7 +152,7 @@ async def get_leakage(
     current_user: User = Depends(get_current_user),
 ):
     """Show bugs found after release (based on environment field)."""
-    await _check_dataset_access(db, dataset_id, current_user)
+    await check_dataset_access(db, dataset_id, current_user)
     data = await get_defect_leakage(db, dataset_id)
     return DefectLeakageResponse(
         dataset_id=data["dataset_id"],
@@ -184,7 +173,7 @@ async def get_module_risks_endpoint(
     current_user: User = Depends(get_current_user),
 ):
     """Show high-risk modules based on bug count & reopen rate."""
-    await _check_dataset_access(db, dataset_id, current_user)
+    await check_dataset_access(db, dataset_id, current_user)
     data = await get_module_risks(db, dataset_id)
     return ModuleRiskResponse(
         dataset_id=dataset_id,
@@ -202,7 +191,7 @@ async def get_lifecycle(
     current_user: User = Depends(get_current_user),
 ):
     """Lifecycle summary: reopen count, resolution stats, status flow."""
-    await _check_dataset_access(db, dataset_id, current_user)
+    await check_dataset_access(db, dataset_id, current_user)
     data = await get_lifecycle_summary(db, dataset_id)
     return LifecycleSummaryResponse(
         dataset_id=dataset_id,
@@ -226,7 +215,7 @@ async def get_lifecycle_defects(
     current_user: User = Depends(get_current_user),
 ):
     """Paginated lifecycle records for individual defects."""
-    await _check_dataset_access(db, dataset_id, current_user)
+    await check_dataset_access(db, dataset_id, current_user)
     data = await get_lifecycle_per_defect(db, dataset_id, page, page_size)
     return LifecycleDefectListResponse(
         dataset_id=dataset_id,
@@ -246,7 +235,7 @@ async def get_sev_resolution(
     current_user: User = Depends(get_current_user),
 ):
     """Compare fix time by severity level (prioritize resources)."""
-    await _check_dataset_access(db, dataset_id, current_user)
+    await check_dataset_access(db, dataset_id, current_user)
     data = await get_severity_vs_resolution(db, dataset_id)
     return SeverityResolutionResponse(
         dataset_id=dataset_id,
