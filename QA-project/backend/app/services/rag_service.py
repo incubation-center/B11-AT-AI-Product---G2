@@ -22,6 +22,7 @@ from app.services.embedding_service import (
     create_query_embedding,
     generate_answer,
     generate_qa_suggestions,
+    generate_test_cases_json,
 )
 from app.services.pinecone_service import (
     upsert_chunks,
@@ -98,6 +99,7 @@ async def index_dataset(db: AsyncSession, dataset_id: int) -> dict:
     # Save document references to Supabase
     db.add_all(doc_records)
     await db.flush()
+    await db.commit()
 
     logger.info(f"Indexed dataset {dataset_id}: {len(vectors)} vectors upserted")
 
@@ -115,6 +117,7 @@ async def ask_question(
     dataset_id: int,
     question: str,
     top_k: int = 5,
+    chat_history: Optional[list[dict]] = None,
 ) -> dict:
     """
     RAG Q&A pipeline:
@@ -181,7 +184,7 @@ async def ask_question(
     dataset_name = ds_result.scalar() or f"Dataset {dataset_id}"
 
     # 5. Generate answer
-    answer = await generate_answer(question, context, dataset_name)
+    answer = await generate_answer(question, context, dataset_name, chat_history)
 
     # 6. Save query record
     query_record = AIQuery(
@@ -238,6 +241,38 @@ async def get_suggestions(db: AsyncSession, dataset_id: int) -> dict:
         "dataset_id": dataset_id,
         "dataset_name": dataset_name,
         "suggestions": suggestions,
+        "chunks_analyzed": len(docs),
+    }
+
+
+async def get_test_cases(db: AsyncSession, dataset_id: int) -> dict:
+    """
+    Generate professional QA test cases based on all defect data.
+    """
+    # Get all chunks for the dataset (limit to 20 for context)
+    result = await db.execute(
+        select(AIDocument)
+        .where(AIDocument.dataset_id == dataset_id)
+        .order_by(AIDocument.chunk_index)
+    )
+    docs = result.scalars().all()
+
+    if not docs:
+        raise ValueError(f"No indexed data for dataset {dataset_id}.")
+
+    context = "\n\n".join(doc.chunk_text for doc in docs[:20])
+
+    ds_result = await db.execute(
+        select(Dataset.file_name).where(Dataset.dataset_id == dataset_id)
+    )
+    dataset_name = ds_result.scalar() or f"Dataset {dataset_id}"
+
+    test_cases = await generate_test_cases_json(context, dataset_name)
+
+    return {
+        "dataset_id": dataset_id,
+        "dataset_name": dataset_name,
+        "test_cases": test_cases,
         "chunks_analyzed": len(docs),
     }
 

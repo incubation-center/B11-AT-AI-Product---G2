@@ -348,6 +348,9 @@ export const users = {
       body: JSON.stringify(data),
     }),
 
+  getTelegramCode: () =>
+    request<{ code: string }>("/users/me/telegram-link-code"),
+
   updateRole: (userId: number, role: "user" | "admin") =>
     request<UserDetail>(`/users/${userId}/role`, {
       method: "PATCH",

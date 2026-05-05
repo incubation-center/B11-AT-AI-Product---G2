@@ -12,6 +12,7 @@ class User(Base):
     password_hash = Column(String(255), nullable=False)
     role = Column(String(50), nullable=False, server_default="user")
     is_verified = Column(Boolean, nullable=False, server_default="false")
+    telegram_id = Column(String(50), nullable=True, unique=True)
     created_at = Column(DateTime, server_default=func.now(), nullable=False)
 
     # Relationships

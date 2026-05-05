@@ -211,34 +211,24 @@ def _build_generation_prompt(repo_owner: str, repo_name: str, files: list[tuple[
 
     files_text = "\n\n".join(file_blocks)
     return (
-        "You are a QA engineering assistant specializing in test case documentation.\n"
-        "Task: Analyze source code and test files from a GitHub repository and generate professional QA test cases.\n"
-        "Output must be ONLY valid JSON (no markdown, no explanation).\n\n"
-        f"Repository: {repo_owner}/{repo_name}\n"
-        f"Generate at most {max_defects} test cases.\n\n"
-        "Each JSON object MUST have these keys (proper QA test case format):\n"
-        "- bug_id (string, REQUIRED): Sequential Test Case ID in the format TC-001, TC-002, … etc.\n"
-        "  Never null — always generate a sequential ID if there is no existing one in the code.\n"
-        "- title (string, required): Brief action-oriented name (e.g., 'Verify user login with valid credentials')\n"
-        "- module (string|null): Software component/feature being tested. Infer from file path / class / function name.\n"
-        "- severity (string|null): one of Critical, High, Medium, Low. Infer from context (auth → High, UI typo → Low).\n"
-        "- priority (string|null): one of P1, P2, P3, P4. Infer from severity if not stated.\n"
-        "- environment (string|null): Where test runs (e.g., staging, production, UAT). Use 'staging' as default.\n"
-        "- status (string|null): Test status — use 'Open' by default unless a test is clearly automated.\n"
-        "- preconditions (string|null): Setup needed before test. Infer from imports, fixtures, or describe blocks.\n"
-        "- test_steps (string|null): Numbered step-by-step instructions executable by a QA tester without code knowledge.\n"
-        "  Example: '1. Open the login page\\n2. Enter valid username and password\\n3. Click the Login button'\n"
-        "- expected_result (string|null): Observable outcome. Example: 'User is redirected to the dashboard'\n\n"
-        "IMPORTANT RULES:\n"
-        "- bug_id is REQUIRED on every test case — always generate TC-001, TC-002, … sequentially.\n"
-        "- title MUST be action-oriented and describe what is being tested (NOT developer notes).\n"
-        "- test_steps MUST be numbered, detailed, and executable by QA without code knowledge.\n"
-        "- expected_result MUST describe observable outcomes (what the tester should see/verify).\n"
-        "- preconditions MUST specify environment/data setup needed.\n"
-        "- Infer missing fields from context — only use null when you truly cannot determine the value.\n"
-        "- Write in QA/tester language, NOT developer language.\n"
-        "- Each test case should be independent and focused on ONE feature.\n"
-        "- Return an array of objects.\n\n"
+        "You are a Lead QA Automation Engineer with 10+ years of experience. Analyze these repository files and generate high-quality, professional test cases.\n"
+        "Output must be ONLY valid JSON (an array of objects).\n\n"
+        "STRICT RULES:\n"
+        "1. NO VAGUE TERMS: Never use 'valid', 'invalid', or 'some value'. Use SPECIFIC, realistic data (e.g., amount = 50, email = 'test@example.com').\n"
+        "2. FULL SPECTRUM COVERAGE: Generate a mix of Positive (happy path), Negative (error handling), and Edge (boundaries, special characters) cases.\n"
+        "3. TESTER BRAIN: Think like a tester—try to break the features. Consider concurrency, empty states, and logic violations.\n"
+        "4. PRECISE RESULTS: Expected result must include UI response and system impact.\n\n"
+        "Each JSON object MUST have these keys:\n"
+        "- bug_id (string, REQUIRED): Sequential ID in format TC-001, TC-002, ...\n"
+        "- title (string, REQUIRED): Concise action-oriented objective.\n"
+        "- module (string|null): Software feature being tested (infer from file path).\n"
+        "- severity (string|null): Critical, High, Medium, Low (Auth failure = Critical, UI typo = Low).\n"
+        "- priority (string|null): P1, P2, P3, P4.\n"
+        "- environment (string|null): Default to 'staging'.\n"
+        "- status (string|null): Default to 'Open'.\n"
+        "- preconditions (string|null): Setup needed before test.\n"
+        "- test_steps (string|null): Numbered actionable steps. Include specific test data here.\n"
+        "- expected_result (string|null): Exact observable outcome and system state post-test.\n\n"
         "=== REPOSITORY FILES (TRUNCATED) ===\n"
         f"{files_text}\n"
         "=== END REPOSITORY FILES ==="
@@ -251,8 +241,9 @@ async def _generate_testcases_with_llm(prompt: str) -> list[dict[str, Any]]:
     We import lazily to avoid circular imports.
     """
     from app.services.embedding_service import _generate_with_retry, GENERATIVE_MODEL
-    # _generate_with_retry returns a string; we then parse JSON array.
-    output = await _generate_with_retry(GENERATIVE_MODEL, prompt)
+    # _generate_with_retry expects a list of messages.
+    messages = [{"role": "user", "content": prompt}]
+    output = await _generate_with_retry(GENERATIVE_MODEL, messages)
     parsed = _extract_json_array(output)
     # Defensive: ensure list elements are objects.
     cleaned: list[dict[str, Any]] = []

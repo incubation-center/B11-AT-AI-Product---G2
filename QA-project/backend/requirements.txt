@@ -1,40 +1,25 @@
-# Web Framework
 fastapi
 uvicorn
-python-multipart
-fastapi-mail
-
-# Database 
-SQLAlchemy
-alembic
+watchfiles
+sqlalchemy[asyncio]
 asyncpg
 psycopg2-binary
-
-# Config & Validation
+alembic
 pydantic
 pydantic-settings
 python-dotenv
-
-# Auth & Security
-bcrypt
-passlib
-python-jose
-
-# AI & Embeddings
-openai>=1.12.0
-sentence-transformers>=2.2.0
-pinecone
-pinecone-plugin-assistant
-
-# Document & Data processing
+python-multipart
+python-jose[cryptography]
+passlib[bcrypt]
+httpx
+pinecone-client
+sentence-transformers
+torch
+openai
 pandas
 openpyxl
-python-docx>=1.1.0
-pymupdf>=1.24.0
-reportlab
-
-# Storage
 boto3
-
-# Utilities
-httpx
+reportlab
+python-telegram-bot
+pymupdf
+python-docx
