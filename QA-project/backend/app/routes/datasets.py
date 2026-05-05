@@ -8,6 +8,7 @@ from app.models.users import User
 from app.models.datasets import Dataset
 from app.models.defects import Defect
 from app.dependencies.auth import get_current_user
+from app.dependencies.authorization import check_dataset_access
 from app.schemas.datasets import DatasetResponse, DatasetListResponse, DatasetUploadResponse, GenerateFromGithubRequest
 from app.services.dataset_service import parse_and_import
 from app.services.github_to_dataset_service import generate_dataset_from_github
@@ -184,13 +185,7 @@ async def get_dataset(
     current_user: User = Depends(get_current_user),
 ):
     """Get a single dataset by ID."""
-    result = await db.execute(select(Dataset).where(Dataset.dataset_id == dataset_id))
-    dataset = result.scalar_one_or_none()
-    if not dataset:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Dataset not found")
-
-    if current_user.role != "admin" and dataset.user_id != current_user.user_id:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Access denied")
+    dataset = await check_dataset_access(db, dataset_id, current_user)
 
     cnt_result = await db.execute(
         select(func.count(Defect.defect_id)).where(Defect.dataset_id == dataset_id)
@@ -217,13 +212,7 @@ async def delete_dataset(
     current_user: User = Depends(get_current_user),
 ):
     """Delete a dataset and all its associated defects (cascade)."""
-    result = await db.execute(select(Dataset).where(Dataset.dataset_id == dataset_id))
-    dataset = result.scalar_one_or_none()
-    if not dataset:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Dataset not found")
-
-    if current_user.role != "admin" and dataset.user_id != current_user.user_id:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Access denied")
+    dataset = await check_dataset_access(db, dataset_id, current_user)
 
     await db.delete(dataset)
     await db.flush()

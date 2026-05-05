@@ -29,6 +29,7 @@ from app.services.pinecone_service import (
     query_similar_chunks,
     delete_dataset_vectors,
 )
+from app.services.answer_quality_service import evaluate_answer
 
 logger = logging.getLogger(__name__)
 
@@ -135,6 +136,9 @@ async def ask_question(
     # 2. Search Pinecone
     matches = await query_similar_chunks(query_embedding, dataset_id, top_k=top_k)
 
+    # Track retrieval similarity scores from Pinecone for quality eval
+    source_scores: list[float] = []
+
     if not matches:
         # Fallback: try to get chunks from Supabase directly
         result = await db.execute(
@@ -173,6 +177,10 @@ async def ask_question(
             if chunk_text:
                 context_parts.append(chunk_text)
                 source_refs.append(match.get("id", "unknown"))
+                # Preserve the similarity score from Pinecone
+                score = match.get("score")
+                if score is not None:
+                    source_scores.append(float(score))
 
     # 3. Build context
     context = "\n\n".join(context_parts)
@@ -186,7 +194,15 @@ async def ask_question(
     # 5. Generate answer
     answer = await generate_answer(question, context, dataset_name, chat_history)
 
-    # 6. Save query record
+    # 6. Evaluate answer quality (retrieval relevance + groundedness + signals)
+    quality = await evaluate_answer(
+        question=question,
+        answer=answer,
+        context_parts=context_parts,
+        source_scores=source_scores or None,
+    )
+
+    # 7. Save query record
     query_record = AIQuery(
         user_id=user_id,
         dataset_id=dataset_id,
@@ -204,6 +220,7 @@ async def ask_question(
         "sources": source_refs,
         "query_id": query_record.query_id,
         "dataset_name": dataset_name,
+        "quality": quality.to_dict(),
     }
 
 

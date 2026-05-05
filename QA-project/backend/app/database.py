@@ -5,7 +5,7 @@ from app.config import settings
 
 engine = create_async_engine(
     settings.ASYNC_DATABASE_URL,
-    echo=True,
+    echo=settings.DEBUG,
     # Disable prepared statements — required for Supabase pooler (pgbouncer)
     connect_args={"statement_cache_size": 0, "prepared_statement_cache_size": 0},
 )

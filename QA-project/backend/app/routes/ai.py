@@ -2,12 +2,11 @@ import logging
 
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
 
 from app.database import get_db
 from app.models.users import User
-from app.models.datasets import Dataset
 from app.dependencies.auth import get_current_user
+from app.dependencies.authorization import check_dataset_access
 from app.services.rag_service import (
     index_dataset,
     ask_question,
@@ -28,17 +27,6 @@ router = APIRouter(prefix="/ai", tags=["AI"])
 logger = logging.getLogger(__name__)
 
 
-async def _check_dataset_access(db: AsyncSession, dataset_id: int, user: User) -> Dataset:
-    """Verify dataset exists and user has access."""
-    result = await db.execute(select(Dataset).where(Dataset.dataset_id == dataset_id))
-    dataset = result.scalar_one_or_none()
-    if not dataset:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Dataset not found")
-    if user.role != "admin" and dataset.user_id != user.user_id:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Access denied")
-    return dataset
-
-
 # ─── Index dataset (chunk + embed + upsert to Pinecone) ─────────────
 
 @router.post("/index/{dataset_id}", response_model=IndexDatasetResponse)
@@ -54,7 +42,7 @@ async def index_dataset_endpoint(
     3. Upsert vectors to Pinecone
     4. Save document references in Supabase
     """
-    await _check_dataset_access(db, dataset_id, current_user)
+    await check_dataset_access(db, dataset_id, current_user)
 
     try:
         result = await index_dataset(db, dataset_id)
@@ -89,7 +77,7 @@ async def ask_question_endpoint(
     2. Search Pinecone for relevant context
     3. Generate answer with OpenRouter
     """
-    await _check_dataset_access(db, body.dataset_id, current_user)
+    await check_dataset_access(db, body.dataset_id, current_user)
 
     try:
         result = await ask_question(
@@ -116,6 +104,7 @@ async def ask_question_endpoint(
         answer=result["answer"],
         sources=result["sources"],
         dataset_name=result.get("dataset_name"),
+        quality=result.get("quality"),
     )
 
 
@@ -131,7 +120,7 @@ async def get_suggestions_endpoint(
     AI-powered QA improvement suggestions based on defect patterns.
     Requires the dataset to be indexed first.
     """
-    await _check_dataset_access(db, dataset_id, current_user)
+    await check_dataset_access(db, dataset_id, current_user)
 
     try:
         result = await get_suggestions(db, dataset_id)
@@ -160,7 +149,7 @@ async def get_queries_endpoint(
     current_user: User = Depends(get_current_user),
 ):
     """Get past AI queries for a dataset."""
-    await _check_dataset_access(db, dataset_id, current_user)
+    await check_dataset_access(db, dataset_id, current_user)
 
     result = await get_query_history(
         db=db,

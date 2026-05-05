@@ -11,7 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { Loader2, Bug, AlertCircle, Clock, CheckCircle, RotateCcw, XCircle, BarChart3, BotMessageSquare, FileText, Send } from "lucide-react";
 import { toast } from "sonner";
 import { BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Label, Sector } from "recharts";
-// import type { PieSectorShapeProps } from "recharts/types/polar/Pie";
+import type { PieSectorDataItem } from "recharts/types/polar/Pie";
 
 /** Theme tokens are full colors (oklch) — use var() directly, not hsl(var(...)). */
 const STATUS_COLORS: Record<string, string> = {
@@ -101,8 +101,8 @@ export default function DashboardPage() {
   const activeStatusSlice =
     activeStatusIndex >= 0 ? statusData[activeStatusIndex] : statusData[0] ?? { name: "Status", value: 0, fill: "var(--muted)" };
 
-  const renderStatusActiveShape = useCallback(
-    ({ outerRadius = 0, ...props }: any) => {
+  const renderStatusPieShape = useCallback(
+    ({ index, outerRadius = 0, ...props }: PieSectorDataItem & { index?: number }) => {
       const baseRadius = typeof outerRadius === "number" ? outerRadius : Number(outerRadius) || 0;
 
       return (
@@ -279,8 +279,7 @@ export default function DashboardPage() {
                           paddingAngle={2}
                           dataKey="value"
                           strokeWidth={3}
-                          activeIndex={activeStatusIndex}
-                          activeShape={renderStatusActiveShape}
+                          activeShape={renderStatusPieShape}
                           onMouseEnter={(_, index) => {
                             if (statusData[index]) {
                               setActiveStatus(statusData[index].name);
