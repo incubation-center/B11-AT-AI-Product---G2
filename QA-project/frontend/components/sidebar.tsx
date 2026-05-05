@@ -16,6 +16,7 @@ import {
   BotMessageSquare,
   FileText,
   Users,
+  Send,
 } from "lucide-react";
 
 const navItems = [
@@ -25,6 +26,7 @@ const navItems = [
   { href: "/dashboard/analytics", label: "Analytics", icon: BarChart3 },
   { href: "/dashboard/ai-chat", label: "AI Chat", icon: BotMessageSquare },
   { href: "/dashboard/reports", label: "Reports", icon: FileText },
+  { href: "https://t.me/QAChatbot", label: "Telegram Bot", icon: Send, external: true },
 ];
 
 const adminItems = [
@@ -55,7 +57,11 @@ export function Sidebar() {
             {navItems.map((item) => (
               <Tooltip key={item.href} delayDuration={0}>
                 <TooltipTrigger asChild>
-                  <Link href={item.href}>
+                  <Link 
+                    href={item.href} 
+                    target={"external" in item && item.external ? "_blank" : undefined}
+                    rel={"external" in item && item.external ? "noopener noreferrer" : undefined}
+                  >
                     <Button
                       variant={isActive(item.href) ? "secondary" : "ghost"}
                       className={cn(
@@ -83,7 +89,11 @@ export function Sidebar() {
                 {adminItems.map((item) => (
                   <Tooltip key={item.href} delayDuration={0}>
                     <TooltipTrigger asChild>
-                      <Link href={item.href}>
+                      <Link 
+                    href={item.href} 
+                    target={"external" in item && item.external ? "_blank" : undefined}
+                    rel={"external" in item && item.external ? "noopener noreferrer" : undefined}
+                  >
                         <Button
                           variant={isActive(item.href) ? "secondary" : "ghost"}
                           className={cn(

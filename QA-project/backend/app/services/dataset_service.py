@@ -132,29 +132,23 @@ def _build_extraction_prompt(raw_text: str, file_name: str, max_cases: int = 100
     # Limit raw text to avoid token explosion
     truncated = raw_text[:80_000] if len(raw_text) > 80_000 else raw_text
     return (
-        "You are a QA engineering assistant. Extract ALL test cases from the document text below.\n"
-        "Return ONLY valid JSON — a JSON array of objects. No markdown, no explanation.\n\n"
-        f"Source file: {file_name}\n"
-        f"Generate at most {max_cases} test cases.\n\n"
+        "You are a Senior QA Engineer. Extract ALL test cases from the document text below and normalize them into structured data.\n"
+        "Return ONLY a valid JSON array of objects. No markdown, no explanation.\n\n"
+        "STRICT RULES:\n"
+        "1. DATA SPECIFICITY: If the document is vague (e.g., 'enter values'), replace with SPECIFIC, realistic test data in the steps.\n"
+        "2. LANGUAGE: Use professional QA/tester terminology (e.g., 'Verify', 'Navigate', 'Expected Result').\n"
+        "3. COMPLETENESS: Every test case must be self-contained and executable.\n\n"
         "Each JSON object MUST have these keys:\n"
-        "- bug_id (string): Test Case ID. If the document contains an ID (e.g. TC-001, TC001, QA-01), use it.\n"
-        "  If the document has no ID, generate a sequential one: TC-001, TC-002, … etc.\n"
-        "- title (string, required): Short action-oriented test case name.\n"
-        "- module (string|null): Software module or feature being tested. Infer from context if not explicit.\n"
-        "- severity (string|null): one of Critical, High, Medium, Low. Infer if not stated.\n"
-        "- priority (string|null): one of P1, P2, P3, P4. Infer if not stated.\n"
-        "- environment (string|null): test environment (e.g. staging, production, UAT). Infer if not stated.\n"
-        "- status (string|null): one of Open, In Progress, Passed, Failed, Blocked, Automated. Use 'Open' if not stated.\n"
-        "- preconditions (string|null): prerequisite conditions before the test is executed.\n"
-        "- test_steps (string|null): Numbered step-by-step instructions for the tester. "
-        "If missing, generate reasonable steps from context.\n"
-        "- expected_result (string|null): The observable outcome after each step or at the end.\n\n"
-        "RULES:\n"
-        "- Every test case MUST have a bug_id — generate one if the document doesn't provide it.\n"
-        "- title is required; never leave it empty.\n"
-        "- Infer missing fields from context; only use null when you truly cannot determine the value.\n"
-        "- Write in QA/tester language, not developer language.\n"
-        "- Each test case should be self-contained and independently executable.\n\n"
+        "- bug_id (string): Sequential ID (TC-001, TC-002, ...) or use ID from document if available.\n"
+        "- title (string, required): Clear action-oriented test case name.\n"
+        "- module (string|null): Software module being tested (infer from context).\n"
+        "- severity (string|null): Critical, High, Medium, or Low.\n"
+        "- priority (string|null): P1, P2, P3, or P4.\n"
+        "- environment (string|null): e.g., staging, production.\n"
+        "- status (string|null): Open, In Progress, Passed, Failed, Blocked, or Automated.\n"
+        "- preconditions (string|null): Setup needed before execution.\n"
+        "- test_steps (string|null): Numbered actionable steps. Format specifically with real test data.\n"
+        "- expected_result (string|null): Clear observable outcome and system impact.\n\n"
         "=== DOCUMENT TEXT ===\n"
         f"{truncated}\n"
         "=== END DOCUMENT TEXT ==="
@@ -184,7 +178,7 @@ async def _ai_extract_testcases(raw_text: str, file_name: str) -> list[dict[str,
     from app.services.embedding_service import _generate_with_retry, GENERATIVE_MODEL
 
     prompt = _build_extraction_prompt(raw_text, file_name)
-    output = await _generate_with_retry(GENERATIVE_MODEL, prompt)
+    output = await _generate_with_retry(GENERATIVE_MODEL, [{"role": "user", "content": prompt}])
     items = _extract_json_array(output)
     return [item for item in items if isinstance(item, dict)]
 

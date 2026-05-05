@@ -1,16 +1,10 @@
-# Web Framework
 fastapi
 uvicorn
-python-multipart
-fastapi-mail
-
-# Database 
-SQLAlchemy
-alembic
+watchfiles
+sqlalchemy[asyncio]
 asyncpg
 psycopg2-binary
-
-# Config & Validation
+alembic
 pydantic
 pydantic-settings
 python-dotenv

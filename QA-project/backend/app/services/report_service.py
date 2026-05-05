@@ -106,7 +106,7 @@ async def _generate_test_plan_ai(data: dict, dataset_name: str) -> dict:
     )
     
     try:
-        resp = await _generate_with_retry(GENERATIVE_MODEL, prompt)
+        resp = await _generate_with_retry(GENERATIVE_MODEL, [{"role": "user", "content": prompt}])
         s = resp.find("{")
         e = resp.rfind("}")
         if s != -1 and e != -1:
