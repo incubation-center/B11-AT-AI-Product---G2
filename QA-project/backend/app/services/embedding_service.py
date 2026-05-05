@@ -29,7 +29,7 @@ EMBEDDING_DIM = 768
 # Free-tier embedding model via OpenRouter.
 # If :free is throttled or retired, swap to:
 #   "openai/text-embedding-3-small"  (paid, 1536-dim native, supports dimensions=768)
-EMBEDDING_MODEL = "nvidia/llama-nemotron-embed-vl-1b-v2:free"
+EMBEDDING_MODEL = "google/gemini-embedding-001"
 
 # Max texts per single API call (stay within free-tier rate limits)
 _EMBED_BATCH_SIZE = 32
