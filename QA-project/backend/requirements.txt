@@ -12,6 +12,7 @@ python-dotenv
 # Auth & Security
 bcrypt
 python-jose
+fastapi-mail
 
 # AI & Embeddings
 openai>=1.12.0
