@@ -5,11 +5,15 @@ load_dotenv()
 
 
 class Settings:
-    DATABASE_URL: str = os.getenv("DATABASE_URL", "")
+    _db_url = os.getenv("DATABASE_URL") or os.getenv("POSTGRES_URL", "")
+    if _db_url.startswith("postgres://"):
+        _db_url = _db_url.replace("postgres://", "postgresql://", 1)
+
+    DATABASE_URL: str = _db_url
 
     # Debug mode — controls SQL echo, verbose logging, etc.
     DEBUG: bool = os.getenv("DEBUG", "false").lower() in ("true", "1", "yes")
-    # Convert postgres:// to postgresql+asyncpg:// for SQLAlchemy async
+    # Convert postgresql:// to postgresql+asyncpg:// for SQLAlchemy async
     ASYNC_DATABASE_URL: str = DATABASE_URL.replace(
         "postgresql://", "postgresql+asyncpg://"
     )
