@@ -17,14 +17,11 @@ python-dotenv
 
 # Auth & Security
 bcrypt
-passlib
 python-jose
 
 # AI & Embeddings
 openai>=1.12.0
-sentence-transformers>=2.2.0
 pinecone
-pinecone-plugin-assistant
 
 # Document & Data processing
 pandas
@@ -35,6 +32,3 @@ reportlab
 
 # Storage
 boto3
-
-# Utilities
-httpx

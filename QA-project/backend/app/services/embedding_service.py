@@ -1,7 +1,8 @@
 """
-Embedding Service — uses sentence-transformers for embeddings and OpenRouter for text generation.
+Embedding Service — uses OpenRouter for both embeddings and text generation.
 
-Embeddings: all-MiniLM-L6-v2 (384-dim, padded to 768 for Pinecone compatibility)
+Embeddings: nvidia/llama-nemotron-embed-vl-1b-v2:free via OpenRouter
+            (2048-dim native, truncated/requested to 768 for Pinecone)
 Generation: OpenRouter API (OpenAI-compatible) with google/gemini-2.0-flash-001
 """
 
@@ -10,7 +11,6 @@ import logging
 from typing import Optional
 
 from openai import AsyncOpenAI
-from sentence_transformers import SentenceTransformer
 from app.config import settings
 
 logger = logging.getLogger(__name__)
@@ -21,9 +21,18 @@ openrouter_client = AsyncOpenAI(
     api_key=settings.OPENROUTER_API_KEY,
 )
 
-# Local embedding model — produces 384-dim vectors, padded to 768 for Pinecone
-_embedding_model: SentenceTransformer | None = None
+# ---------------------------------------------------------------------------
+# Embedding configuration
+# ---------------------------------------------------------------------------
 EMBEDDING_DIM = 768
+
+# Free-tier embedding model via OpenRouter.
+# If :free is throttled or retired, swap to:
+#   "openai/text-embedding-3-small"  (paid, 1536-dim native, supports dimensions=768)
+EMBEDDING_MODEL = "nvidia/llama-nemotron-embed-vl-1b-v2:free"
+
+# Max texts per single API call (stay within free-tier rate limits)
+_EMBED_BATCH_SIZE = 32
 
 # OpenRouter generative model
 GENERATIVE_MODEL = "google/gemini-2.0-flash-001"
@@ -33,19 +42,39 @@ MAX_RETRIES = 2
 RETRY_BASE_DELAY = 15  # seconds
 
 
-def _get_embedding_model() -> SentenceTransformer:
-    """Lazy-load the sentence-transformers model."""
-    global _embedding_model
-    if _embedding_model is None:
-        _embedding_model = SentenceTransformer("all-MiniLM-L6-v2")
-    return _embedding_model
+# ---------------------------------------------------------------------------
+# Internal helpers
+# ---------------------------------------------------------------------------
 
 
-def _pad_embedding(vec: list[float], target_dim: int = EMBEDDING_DIM) -> list[float]:
-    """Pad or truncate an embedding vector to target_dim."""
-    if len(vec) >= target_dim:
-        return vec[:target_dim]
-    return vec + [0.0] * (target_dim - len(vec))
+async def _embed_with_retry(
+    texts: list[str],
+    input_type: str = "search_document",
+) -> object:
+    """Call OpenRouter embeddings endpoint with automatic retry on 429."""
+    last_error: Exception | None = None
+    for attempt in range(1 + MAX_RETRIES):
+        try:
+            response = await openrouter_client.embeddings.create(
+                model=EMBEDDING_MODEL,
+                input=texts,
+                dimensions=EMBEDDING_DIM,
+                extra_body={"input_type": input_type},
+            )
+            return response
+        except Exception as e:
+            error_str = str(e)
+            if "429" in error_str or "rate" in error_str.lower():
+                delay = RETRY_BASE_DELAY * (attempt + 1)
+                logger.warning(
+                    f"Embedding rate-limited (attempt {attempt + 1}/{1 + MAX_RETRIES}), "
+                    f"retrying in {delay:.0f}s …"
+                )
+                last_error = e
+                await asyncio.sleep(delay)
+            else:
+                raise
+    raise last_error  # type: ignore[misc]
 
 
 async def _generate_with_retry(model: str, prompt: str) -> str:
@@ -73,40 +102,53 @@ async def _generate_with_retry(model: str, prompt: str) -> str:
     raise last_error  # type: ignore[misc]
 
 
+# ---------------------------------------------------------------------------
+# Public API — embeddings
+# ---------------------------------------------------------------------------
+
+
 async def create_embeddings(texts: list[str]) -> list[list[float]]:
     """
-    Create embeddings for a list of text strings using sentence-transformers.
-    Returns a list of embedding vectors (768-dim each, zero-padded).
+    Create embeddings for a list of text strings via OpenRouter.
+    Returns a list of 768-dim embedding vectors.
+
+    Texts are batched to _EMBED_BATCH_SIZE and sent sequentially to respect
+    free-tier rate limits.
     """
     if not texts:
         return []
 
-    model = _get_embedding_model()
+    all_vectors: list[list[float]] = []
 
-    try:
-        raw_embeddings = model.encode(texts, show_progress_bar=False)
-        embeddings = [_pad_embedding(vec.tolist()) for vec in raw_embeddings]
-        logger.info(f"Created {len(embeddings)} embeddings (dim={len(embeddings[0]) if embeddings else 0})")
-        return embeddings
-    except Exception as e:
-        logger.error(f"Embedding error: {e}")
-        raise
+    for start in range(0, len(texts), _EMBED_BATCH_SIZE):
+        batch = texts[start : start + _EMBED_BATCH_SIZE]
+        resp = await _embed_with_retry(batch, input_type="search_document")
+        # Sort by index to guarantee order matches input
+        sorted_data = sorted(resp.data, key=lambda item: item.index)
+        vectors = [item.embedding[:EMBEDDING_DIM] for item in sorted_data]
+        all_vectors.extend(vectors)
+
+    logger.info(
+        f"Created {len(all_vectors)} embeddings "
+        f"(dim={len(all_vectors[0]) if all_vectors else 0})"
+    )
+    return all_vectors
 
 
 async def create_query_embedding(query: str) -> list[float]:
     """
-    Create a single embedding for a search query.
+    Create a single embedding for a search query via OpenRouter.
+    Uses input_type='search_query' for asymmetric retrieval.
     """
-    model = _get_embedding_model()
+    resp = await _embed_with_retry([query], input_type="search_query")
+    vec = resp.data[0].embedding[:EMBEDDING_DIM]
+    logger.info(f"Created query embedding (dim={len(vec)})")
+    return vec
 
-    try:
-        raw = model.encode([query], show_progress_bar=False)
-        embedding = _pad_embedding(raw[0].tolist())
-        logger.info(f"Created query embedding (dim={len(embedding)})")
-        return embedding
-    except Exception as e:
-        logger.error(f"Query embedding error: {e}")
-        raise
+
+# ---------------------------------------------------------------------------
+# Public API — generation (unchanged)
+# ---------------------------------------------------------------------------
 
 
 async def generate_answer(question: str, context: str, dataset_name: str = "") -> str:
