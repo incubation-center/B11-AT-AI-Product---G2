@@ -15,7 +15,7 @@ python-jose
 
 # AI & Embeddings
 openai>=1.12.0
-pinecone
+pinecone>=3.0.0
 
 # Document & Data processing
 pandas
