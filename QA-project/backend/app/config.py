@@ -35,8 +35,7 @@ class Settings:
         "http://localhost:3001",
         "http://127.0.0.1:3000",
         "http://127.0.0.1:3001",
-        "https://qa-project-one.vercel.app",
-        "https://qa-project-n7gd0bd8i-seththavareakhours-projects.vercel.app",
+        "https://qa-project-frontend.vercel.app",
     ] + [o.strip() for o in _extra.split(",") if o.strip()]
 
     # JWT
