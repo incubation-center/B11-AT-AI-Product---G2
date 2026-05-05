@@ -28,3 +28,6 @@ reportlab==4.4.10
 
 # Storage
 boto3==1.42.80
+
+# External Integrations
+python-telegram-bot==22.7
