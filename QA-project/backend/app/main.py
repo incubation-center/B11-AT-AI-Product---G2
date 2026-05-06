@@ -5,7 +5,7 @@ from fastapi.middleware.cors import CORSMiddleware
 import logging
 
 from app.config import settings
-from app.routes import auth, users, datasets, defects, analytics, ai, reports
+from app.routes import auth, users, datasets, defects, analytics, ai, reports, telegram
 from app.services.telegram_service import start_bot, stop_bot
 
 logger = logging.getLogger(__name__)
@@ -52,6 +52,7 @@ app.include_router(defects.router, prefix="/api")
 app.include_router(analytics.router, prefix="/api")
 app.include_router(ai.router, prefix="/api")
 app.include_router(reports.router, prefix="/api")
+app.include_router(telegram.router, prefix="/api")
 
 
 @app.get("/")

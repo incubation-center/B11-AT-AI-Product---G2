@@ -109,13 +109,26 @@ class TelegramBotService:
         # 2. Default to AI Response
         await AIHandler.perform_ai_response(update, context, text)
 
+    @classmethod
+    async def process_webhook_update(cls, update_data: dict) -> None:
+        """Processes an update received via webhook."""
+        app = await cls.get_instance()
+        update = Update.de_json(update_data, app.bot)
+        await app.process_update(update)
+
 async def start_bot():
     try:
         app = await TelegramBotService.get_instance()
         await app.initialize()
         await app.start()
-        await app.updater.start_polling(timeout=30)
-        logger.info("Bot Online (Modular + UX Optimized)")
+        
+        if settings.TELEGRAM_WEBHOOK_URL:
+            webhook_path = f"{settings.TELEGRAM_WEBHOOK_URL.rstrip('/')}/api/webhook/telegram"
+            await app.bot.set_webhook(url=webhook_path)
+            logger.info(f"Telegram Bot Webhook configured: {webhook_path}")
+        else:
+            await app.updater.start_polling(timeout=30)
+            logger.info("Bot Online (Polling Mode)")
     except Exception as e:
         logger.error(f"Startup fail: {e}")
 
